@@ -25,6 +25,7 @@ class DetectedSignal(BaseModel):
     severity: SignalSeverity = Field(description="Severity tier of this finding")
 
 class VerifierOutput(BaseModel):
+    source: str = Field(default="deterministic", description="Identifier marking this block as deterministic ground-truth verification")
     urls: list[DetectedUrl] = Field(default_factory=list)
     signals: list[DetectedSignal] = Field(default_factory=list)
     has_otp_request: bool = False

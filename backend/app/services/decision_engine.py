@@ -4,6 +4,7 @@ from backend.app.models.analysis_result import (
     AnalysisResponse,
     FinalVerdict,
     ConfidenceRating,
+    EvidenceTrace,
 )
 
 class DecisionEngine:
@@ -16,8 +17,11 @@ class DecisionEngine:
         self,
         ai_output: AiAnalysisOutput | None,
         verifier_output: VerifierOutput,
+        raw_snippet: str,
         normalized_length: int,
-        input_type: str = "text"
+        input_type: str = "pasted_text",
+        extracted_ocr_text: str | None = None,
+        image_metadata: dict | None = None,
     ) -> AnalysisResponse:
         rationale: list[str] = []
         tactics_list: list[str] = []
@@ -34,22 +38,30 @@ class DecisionEngine:
             for req in ai_output.requests:
                 evidence_list.append(f"[REQUEST] {req}")
 
+        trace = EvidenceTrace(
+            input_type=input_type,
+            raw_input_snippet=raw_snippet[:100] + ("..." if len(raw_snippet) > 100 else ""),
+            extracted_ocr_text=extracted_ocr_text,
+            normalized_input_length=normalized_length,
+            image_metadata=image_metadata,
+        )
+
         # Check for very short / ambiguous inputs
         if normalized_length < 15 and not verifier_output.signals:
             rationale.append("Input text is extremely brief and contains no identifiable deterministic indicators.")
             return AnalysisResponse(
+                source="decision_engine",
                 verdict=FinalVerdict.INSUFFICIENT_EVIDENCE,
                 confidence=ConfidenceRating.LOW,
                 confidence_explanation="The message contains too few characters to establish intent safely.",
                 plain_english_summary="The provided message is too brief or ambiguous to reliably determine whether it is safe or harmful.",
                 recommended_action="Do not respond or click unknown links without verifying the sender's identity through official channels.",
-                ai_findings=ai_output,
+                ai_interpretation=ai_output,
                 deterministic_findings=verifier_output,
                 decision_rationale=rationale,
                 detected_manipulation_tactics=tactics_list,
                 extracted_evidence=evidence_list,
-                input_type=input_type,
-                normalized_input_length=normalized_length,
+                evidence_trace=trace,
             )
 
         # Evaluate deterministic risk
@@ -127,18 +139,18 @@ class DecisionEngine:
         recommended_action = self._generate_action(verdict, verifier_output)
 
         return AnalysisResponse(
+            source="decision_engine",
             verdict=verdict,
             confidence=confidence,
             confidence_explanation=conf_exp,
             plain_english_summary=plain_summary,
             recommended_action=recommended_action,
-            ai_findings=ai_output,
+            ai_interpretation=ai_output,
             deterministic_findings=verifier_output,
             decision_rationale=rationale,
             detected_manipulation_tactics=tactics_list,
             extracted_evidence=evidence_list,
-            input_type=input_type,
-            normalized_input_length=normalized_length,
+            evidence_trace=trace,
         )
 
     def _generate_summary(

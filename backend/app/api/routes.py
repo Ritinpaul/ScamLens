@@ -11,7 +11,7 @@ from backend.app.models.analysis_result import AnalysisResponse
 
 router = APIRouter()
 
-# Instantiate core services
+# Core service instances
 ai_provider = OllamaProvider()
 verifier = DeterministicVerifier()
 decision_engine = DecisionEngine()
@@ -62,7 +62,6 @@ async def analyze_text_endpoint(req: TextAnalysisRequest):
     try:
         ai_output = await ai_provider.analyze_text(normalized)
     except ModelConnectionError as e:
-        # Transparent error reporting: do not fake response, but explain to user
         raise HTTPException(
             status_code=503,
             detail=f"Local model runtime unavailable: {e.message}. Ensure Ollama is running at {settings.OLLAMA_BASE_URL}."
@@ -77,8 +76,9 @@ async def analyze_text_endpoint(req: TextAnalysisRequest):
     final_result = decision_engine.synthesize(
         ai_output=ai_output,
         verifier_output=verifier_findings,
+        raw_snippet=normalized,
         normalized_length=len(normalized),
-        input_type="text"
+        input_type="pasted_text"
     )
 
     return final_result
@@ -86,12 +86,9 @@ async def analyze_text_endpoint(req: TextAnalysisRequest):
 @router.post("/api/analyze/image", response_model=AnalysisResponse)
 async def analyze_image_endpoint(file: UploadFile = File(...)):
     """Extract text from an uploaded screenshot using local OCR and analyze it."""
-    if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Uploaded file must be an image (PNG, JPEG, WebP, etc.).")
-
     try:
         contents = await file.read()
-        extracted_text = image_extractor.extract_text_from_bytes(contents)
+        extracted_text, metadata = image_extractor.extract_text_from_bytes(contents)
     except ImageProcessingError as e:
         raise HTTPException(status_code=422, detail=f"Image processing error: {e.message}")
     except Exception as e:
@@ -124,8 +121,11 @@ async def analyze_image_endpoint(file: UploadFile = File(...)):
     final_result = decision_engine.synthesize(
         ai_output=ai_output,
         verifier_output=verifier_findings,
+        raw_snippet=normalized,
         normalized_length=len(normalized),
-        input_type="image"
+        input_type="screenshot_ocr",
+        extracted_ocr_text=extracted_text,
+        image_metadata=metadata,
     )
 
     return final_result
