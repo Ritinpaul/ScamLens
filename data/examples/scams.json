@@ -1,0 +1,27 @@
+[
+  {
+    "category": "electricity_disconnection",
+    "text": "Dear customer, your electricity power cut tonight at 9:30 PM from electricity office because your previous month bill was not updated. Please immediately contact our electricity officer at 9876543210. Thank you.",
+    "expected_verdict": "scam"
+  },
+  {
+    "category": "banking_kyc_phishing",
+    "text": "SBI Alert: Your State Bank account has been blocked due to uncompleted KYC. Click here http://sbi-kyc-update.xyz/login to update PAN & Aadhaar immediately to resume services.",
+    "expected_verdict": "scam"
+  },
+  {
+    "category": "part_time_job_telegram",
+    "text": "Hello, I am HR manager from Amazon India. We offer remote part time job earning Rs 5000-10000 daily by liking YouTube videos. Send Rs 500 registration fee to recruit.hr@okaxis to start.",
+    "expected_verdict": "scam"
+  },
+  {
+    "category": "courier_customs_advance_fee",
+    "text": "India Post: Your package #IN83921 cannot be delivered due to incorrect address. Pay courier charge of Rs 25 at https://bit.ly/ind-post-delivery within 24 hours.",
+    "expected_verdict": "scam"
+  },
+  {
+    "category": "benign_routine_message",
+    "text": "Hey Mom, just boarded the train. Will reach home by 8:30 PM. See you soon!",
+    "expected_verdict": "likely_legitimate"
+  }
+]
