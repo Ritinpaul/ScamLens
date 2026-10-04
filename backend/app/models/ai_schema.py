@@ -26,3 +26,36 @@ class AiAnalysisOutput(BaseModel):
         default="model_unvalidated",
         description="Explicit notice that model confidence is qualitative and uncalibrated"
     )
+    # Structured contextual calibration fields
+    requests_secret_disclosure: bool = Field(
+        default=False,
+        description="Whether the sender asks the recipient to disclose secrets, OTP, PIN, password, or CVV"
+    )
+    requests_payment: bool = Field(
+        default=False,
+        description="Whether the sender asks the recipient to transfer money, scan payment QR, or pay fees"
+    )
+    requests_external_action: bool = Field(
+        default=False,
+        description="Whether the user is directed to click external links, call unknown numbers, or install APKs"
+    )
+    contains_negative_security_warning: bool = Field(
+        default=False,
+        description="Explicit warning advising NOT to share OTP/password, or to report fraud (reduces scam likelihood)"
+    )
+    contains_transaction_notification: bool = Field(
+        default=False,
+        description="Routine transactional debit/credit notice or account status update with no dangerous call to action"
+    )
+    contains_normal_due_date_language: bool = Field(
+        default=False,
+        description="Standard due date or promotional timeline without threats of imminent punitive disconnection/arrest"
+    )
+    impersonates_authority: bool = Field(
+        default=False,
+        description="Falsely claiming authority of banks, police, utility boards, or couriers to coerce the recipient"
+    )
+    uses_coercive_urgency: bool = Field(
+        default=False,
+        description="Threatening imminent account freeze, power shutoff, or arrest to prevent reflection"
+    )

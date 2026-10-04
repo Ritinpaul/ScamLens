@@ -6,7 +6,9 @@ from backend.app.models.verifier_schema import (
     DetectedUrl,
     DetectedSignal,
     SignalSeverity,
+    UrlCertainty,
 )
+from backend.app.services.url_extractor import UrlExtractor
 
 # Known URL shorteners
 SHORTENER_DOMAINS = {
@@ -34,14 +36,15 @@ UPI_REGEX = re.compile(
 
 # OTP harvesting indicators
 OTP_PATTERNS = [
-    (r"\b(?:share|send|forward|tell|give)\s+(?:the\s+)?(?:otp|one\s*time\s*password|verification\s*code|6\s*digit\s*code)\b", "Direct request to disclose OTP/verification code", SignalSeverity.CRITICAL),
+    (r"\b(?:share|send|forward|tell|give|provide)\s+(?:the\s+|this\s+|your\s+|us\s+(?:the\s+)?|me\s+(?:the\s+)?|our\s+)?(?:otp|one\s*time\s*password|verification\s*code|security\s*code|6\s*digit\s*code)\b", "Direct request to disclose OTP/verification code", SignalSeverity.CRITICAL),
     (r"\b(?:otp|code)\s+(?:sent\s+to\s+your\s+phone|received\s+on\s+sms)\b", "Reference to an incoming authentication code", SignalSeverity.HIGH),
     (r"\b(?:enter|submit)\s+(?:the\s+)?otp\s+to\s+(?:receive|claim|credit|accept)\b", "Classic reverse-OTP / credit deception pattern", SignalSeverity.CRITICAL),
 ]
 
 # Credential harvesting indicators
 CREDENTIAL_PATTERNS = [
-    (r"\b(?:enter|provide|update|verify|confirm)\s+(?:your\s+)?(?:netbanking\s+password|login\s+password|atm\s+pin|mpin|cvv|card\s+number)\b", "Request for banking secrets/passwords/PIN", SignalSeverity.CRITICAL),
+    (r"\b(?:enter|provide|update|verify|confirm)\s+(?:your\s+)?(?:[a-zA-Z0-9\s,&]{0,20}\s+)?(?:netbanking\s+password|login\s+password|atm\s+pin|mpin|cvv|card\s+number)\b", "Request for banking secrets/passwords/PIN", SignalSeverity.CRITICAL),
+    (r"\b(?:netbanking\s+password|login\s+password|atm\s+pin|mpin)\b", "Direct mention of sensitive banking credentials", SignalSeverity.CRITICAL),
     (r"\b(?:cvv|card\s+verification\s+value)\b", "Card security code mention", SignalSeverity.HIGH),
     (r"\b(?:pan\s*card\s*number|aadhaar\s*number|aadhar\s*number)\s+(?:update|verification|mandatory)\b", "Government identity credential solicitation", SignalSeverity.HIGH),
 ]
@@ -78,12 +81,24 @@ BRAND_KEYWORDS = {
 class DeterministicVerifier:
     """Performs explainable, deterministic signature and pattern inspection."""
 
+    def __init__(self):
+        self._url_extractor = UrlExtractor()
+
     def verify(self, text: str) -> VerifierOutput:
-        urls = self._extract_and_inspect_urls(text)
+        urls = self._url_extractor.extract_urls(text)
         signals: list[DetectedSignal] = []
 
         # 1. URL signals
+        has_uncertain_urls = False
         for u in urls:
+            if u.certainty == UrlCertainty.UNCERTAIN:
+                has_uncertain_urls = True
+                signals.append(DetectedSignal(
+                    category="suspicious_url",
+                    pattern_matched="malformed_ocr_url_candidate",
+                    snippet=u.raw_url,
+                    severity=SignalSeverity.HIGH,
+                ))
             if u.is_ip_address:
                 signals.append(DetectedSignal(
                     category="suspicious_url",
@@ -116,8 +131,12 @@ class DeterministicVerifier:
         # 2. OTP signals
         has_otp = False
         for pattern, desc, sev in OTP_PATTERNS:
-            match = re.search(pattern, text, re.IGNORECASE)
-            if match:
+            for match in re.finditer(pattern, text, re.IGNORECASE):
+                start = match.start()
+                preceding = text[max(0, start - 30):start].lower().strip()
+                is_negated = bool(re.search(r"\b(?:do\s*not|don'?t|never|should\s*not|must\s*not|not\s*to)\s*$", preceding))
+                if is_negated:
+                    continue  # Protective negative security instruction, not an attack
                 has_otp = True
                 signals.append(DetectedSignal(
                     category="otp_harvesting",
@@ -129,8 +148,12 @@ class DeterministicVerifier:
         # 3. Credential solicitation
         has_credentials = False
         for pattern, desc, sev in CREDENTIAL_PATTERNS:
-            match = re.search(pattern, text, re.IGNORECASE)
-            if match:
+            for match in re.finditer(pattern, text, re.IGNORECASE):
+                start = match.start()
+                preceding = text[max(0, start - 30):start].lower().strip()
+                is_negated = bool(re.search(r"\b(?:do\s*not|don'?t|never|should\s*not|must\s*not|not\s*to)\s*$", preceding))
+                if is_negated:
+                    continue  # Protective warning
                 has_credentials = True
                 signals.append(DetectedSignal(
                     category="credential_solicitation",
@@ -201,67 +224,9 @@ class DeterministicVerifier:
             has_shortened_url=any(u.is_shortener for u in urls),
             has_ip_url=any(u.is_ip_address for u in urls),
             has_urgency=has_urgency,
+            has_uncertain_urls=has_uncertain_urls,
             deterministic_risk_level=risk_level,
         )
-
-    def _extract_and_inspect_urls(self, text: str) -> list[DetectedUrl]:
-        detected: list[DetectedUrl] = []
-        raw_matches = URL_REGEX.findall(text)
-
-        for match in raw_matches:
-            raw_url = match[0] if isinstance(match, tuple) else match
-            raw_url = raw_url.strip()
-
-            # Ensure valid parseable scheme
-            to_parse = raw_url
-            if not to_parse.startswith(("http://", "https://")):
-                to_parse = "http://" + to_parse
-
-            try:
-                parsed = urlparse(to_parse)
-                host = parsed.hostname or ""
-            except Exception:
-                host = ""
-
-            # Check if host is raw IP
-            is_ip = False
-            if host:
-                try:
-                    ipaddress.ip_address(host)
-                    is_ip = True
-                except ValueError:
-                    is_ip = False
-
-            # Check if domain is known shortener
-            is_short = host.lower() in SHORTENER_DOMAINS if host else False
-
-            # Check TLD
-            is_susp_tld = False
-            if host and not is_ip:
-                parts = host.lower().split(".")
-                if len(parts) >= 2 and parts[-1] in SUSPICIOUS_TLDS:
-                    is_susp_tld = True
-
-            notes = []
-            if is_ip:
-                notes.append("Host is a numerical IP address instead of a recognized domain")
-            if is_short:
-                notes.append(f"Domain '{host}' hides the final destination URL")
-            if is_susp_tld:
-                notes.append(f"TLD '.{parts[-1]}' is statistically correlated with disposable phishing sites")
-
-            detected.append(DetectedUrl(
-                raw_url=raw_url,
-                scheme=parsed.scheme if parsed.scheme else "",
-                host=host,
-                path=parsed.path or "",
-                is_ip_address=is_ip,
-                is_shortener=is_short,
-                is_suspicious_tld=is_susp_tld,
-                notes=notes,
-            ))
-
-        return detected
 
     def _compute_risk_level(self, signals: list[DetectedSignal]) -> str:
         severities = {s.severity for s in signals}

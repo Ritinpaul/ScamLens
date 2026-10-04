@@ -8,6 +8,11 @@ class SignalSeverity(str, Enum):
     LOW = "low"
     INFO = "info"
 
+class UrlCertainty(str, Enum):
+    CONFIDENT = "confidently_extracted"
+    PROBABLE = "probable"
+    UNCERTAIN = "malformed_uncertain"
+
 class DetectedUrl(BaseModel):
     raw_url: str
     scheme: str = ""
@@ -16,6 +21,8 @@ class DetectedUrl(BaseModel):
     is_ip_address: bool = False
     is_shortener: bool = False
     is_suspicious_tld: bool = False
+    certainty: UrlCertainty = UrlCertainty.CONFIDENT
+    reconstructed_candidate: str | None = None
     notes: list[str] = Field(default_factory=list)
 
 class DetectedSignal(BaseModel):
@@ -34,4 +41,5 @@ class VerifierOutput(BaseModel):
     has_shortened_url: bool = False
     has_ip_url: bool = False
     has_urgency: bool = False
+    has_uncertain_urls: bool = False
     deterministic_risk_level: str = "none"  # "critical", "high", "medium", "low", "none"

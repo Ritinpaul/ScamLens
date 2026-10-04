@@ -1,0 +1,1230 @@
+{
+  "dataset_summary": {
+    "total_cases": 16,
+    "scam_cases": 8,
+    "legitimate_cases": 8
+  },
+  "deterministic_results": {
+    "scam_signal_coverage": "6/8",
+    "scam_coverage_percentage": 75.0,
+    "false_critical_signals": "0/8",
+    "false_signals_list": []
+  },
+  "model_results": {
+    "model_name": "llama3:latest",
+    "scam_recall": 1.0,
+    "legitimate_false_positive_rate": 0.0,
+    "exact_classification_accuracy": 1.0,
+    "latency": {
+      "samples": [
+        37.51,
+        35.95,
+        38.74
+      ],
+      "min": 35.95,
+      "max": 38.74,
+      "avg": 37.4
+    }
+  },
+  "combined_results": {
+    "scam_recall": 1.0,
+    "legitimate_false_positive_rate": 0.0,
+    "exact_classification_accuracy": 1.0,
+    "disagreements_resolved": 0,
+    "insufficient_evidence_cases": 0
+  },
+  "remove_ai_cases": {
+    "case_a": {
+      "id": "scam_bank_kyc_01",
+      "category": "bank_kyc_phishing",
+      "deterministic_only": {
+        "verdict": "scam",
+        "signals": [
+          "unencrypted_http_scheme",
+          "Request for banking secrets/passwords/PIN",
+          "Direct mention of sensitive banking credentials",
+          "Time-pressure coercion",
+          "claimed_brand_sbi_mismatched_domain_sbi-kyc-verify.example.com"
+        ],
+        "risk_level": "critical"
+      },
+      "ai_only": {
+        "verdict": "scam",
+        "tactics": [
+          "impersonation_fraud",
+          "coercive_urgency"
+        ],
+        "summary": "The message is impersonating the State Bank of India (SBI) and is attempting to trick the recipient into verifying their PAN and NetBanking password by clicking on a suspicious link."
+      },
+      "combined": {
+        "verdict": "scam",
+        "confidence": "high",
+        "rationale": [
+          "CRITICAL RULE TRIGGERED: One or more critical deterministic rules matched (direct OTP/credential harvest or IP link)."
+        ]
+      }
+    },
+    "case_b": {
+      "id": "scam_pure_social_eng_08",
+      "category": "pure_social_engineering_no_technical_indicators",
+      "deterministic_only": {
+        "verdict": "likely_legitimate",
+        "signals": [],
+        "risk_level": "none"
+      },
+      "ai_only": {
+        "verdict": "scam",
+        "tactics": [
+          "emotional_manipulation"
+        ],
+        "summary": "The message is an impersonation attempt, using emotional manipulation to gain trust and request sensitive information."
+      },
+      "combined": {
+        "verdict": "scam",
+        "confidence": "medium",
+        "rationale": [
+          "SEMANTIC DETECTION: The AI model detected scam intent through contextual manipulation and deceptive pretext."
+        ]
+      }
+    }
+  },
+  "latency_benchmarks": {
+    "text_analysis_seconds": {
+      "samples": [
+        37.51,
+        35.95,
+        38.74
+      ],
+      "min": 35.95,
+      "max": 38.74,
+      "avg": 37.4
+    },
+    "screenshot_ocr_seconds": {
+      "samples": [
+        8.1,
+        1.72,
+        1.65
+      ],
+      "min": 1.65,
+      "max": 8.1,
+      "avg": 3.82
+    },
+    "screenshot_complete_pipeline_seconds": {
+      "samples": [
+        49.52,
+        46.08
+      ],
+      "min": 46.08,
+      "max": 49.52,
+      "avg": 47.8
+    }
+  },
+  "ocr_before_after": {
+    "ground_truth_url": "http://sbi-kyc.xyz/verify",
+    "before_hardening_extracted_text": "Update your KYC immediately http lsbi-kycxyz verify",
+    "after_hardening_extracted_text": "State Bank Alert ( SMS)\nDear Customer; your SBl account issuspended today:\nUpdate your KYC immediately: http lisbi-kyc xyz erify\nFailure toverify will permanently freeze your balance_",
+    "after_hardening_metadata": {
+      "format": "PNG",
+      "dimensions": "700x250",
+      "line_count": 4,
+      "raw_ocr_length": 183,
+      "mean_ocr_confidence": 0.58,
+      "min_ocr_confidence": 0.381,
+      "has_uncertain_tokens": true
+    },
+    "after_hardening_detected_urls": [
+      {
+        "raw_url": "http lisbi-kyc xyz erify",
+        "scheme": "http",
+        "host": "sbi-kyc.xyz",
+        "path": "/erify",
+        "is_ip_address": false,
+        "is_shortener": false,
+        "is_suspicious_tld": true,
+        "certainty": "malformed_uncertain",
+        "reconstructed_candidate": "http://sbi-kyc.xyz/erify",
+        "notes": [
+          "TLD '.xyz' is statistically correlated with disposable phishing sites",
+          "OCR noise detected in URL protocol or delimiters. Preserved as uncertain candidate; characters should be verified manually."
+        ]
+      }
+    ],
+    "after_hardening_signals": [
+      {
+        "category": "suspicious_url",
+        "pattern_matched": "malformed_ocr_url_candidate",
+        "snippet": "http lisbi-kyc xyz erify",
+        "severity": "high"
+      },
+      {
+        "category": "suspicious_url",
+        "pattern_matched": "suspicious_tld",
+        "snippet": "http lisbi-kyc xyz erify",
+        "severity": "high"
+      },
+      {
+        "category": "suspicious_url",
+        "pattern_matched": "unencrypted_http_scheme",
+        "snippet": "http lisbi-kyc xyz erify",
+        "severity": "medium"
+      },
+      {
+        "category": "artificial_urgency",
+        "pattern_matched": "Time-pressure coercion",
+        "snippet": "immediately",
+        "severity": "high"
+      }
+    ],
+    "uncertainty_flagged": true
+  },
+  "per_case_details": {
+    "deterministic": [
+      {
+        "id": "scam_bank_kyc_01",
+        "expected_class": "scam",
+        "risk_level": "critical",
+        "signal_count": 5,
+        "signals": [
+          {
+            "category": "suspicious_url",
+            "pattern_matched": "unencrypted_http_scheme",
+            "snippet": "http://sbi-kyc-verify.example.com/login",
+            "severity": "medium"
+          },
+          {
+            "category": "credential_solicitation",
+            "pattern_matched": "Request for banking secrets/passwords/PIN",
+            "snippet": "verify your PAN & NetBanking password",
+            "severity": "critical"
+          },
+          {
+            "category": "credential_solicitation",
+            "pattern_matched": "Direct mention of sensitive banking credentials",
+            "snippet": "NetBanking password",
+            "severity": "critical"
+          },
+          {
+            "category": "artificial_urgency",
+            "pattern_matched": "Time-pressure coercion",
+            "snippet": "immediately",
+            "severity": "high"
+          },
+          {
+            "category": "impersonation_mismatch",
+            "pattern_matched": "claimed_brand_sbi_mismatched_domain_sbi-kyc-verify.example.com",
+            "snippet": "Claimed brand 'sbi' with link 'http://sbi-kyc-verify.example.com/login'",
+            "severity": "critical"
+          }
+        ],
+        "urls": [
+          {
+            "raw_url": "http://sbi-kyc-verify.example.com/login",
+            "scheme": "http",
+            "host": "sbi-kyc-verify.example.com",
+            "path": "/login",
+            "is_ip_address": false,
+            "is_shortener": false,
+            "is_suspicious_tld": false,
+            "certainty": "confidently_extracted",
+            "reconstructed_candidate": null,
+            "notes": []
+          }
+        ]
+      },
+      {
+        "id": "scam_electricity_02",
+        "expected_class": "scam",
+        "risk_level": "high",
+        "signal_count": 2,
+        "signals": [
+          {
+            "category": "suspicious_url",
+            "pattern_matched": "unencrypted_http_scheme",
+            "snippet": "http://bill-update.example.com",
+            "severity": "medium"
+          },
+          {
+            "category": "artificial_urgency",
+            "pattern_matched": "Time-pressure coercion",
+            "snippet": "tonight at 9",
+            "severity": "high"
+          }
+        ],
+        "urls": [
+          {
+            "raw_url": "http://bill-update.example.com",
+            "scheme": "http",
+            "host": "bill-update.example.com",
+            "path": "",
+            "is_ip_address": false,
+            "is_shortener": false,
+            "is_suspicious_tld": false,
+            "certainty": "confidently_extracted",
+            "reconstructed_candidate": null,
+            "notes": []
+          }
+        ]
+      },
+      {
+        "id": "scam_delivery_customs_03",
+        "expected_class": "scam",
+        "risk_level": "critical",
+        "signal_count": 4,
+        "signals": [
+          {
+            "category": "suspicious_url",
+            "pattern_matched": "unencrypted_http_scheme",
+            "snippet": "http://fedex-customs-pay.example.com",
+            "severity": "medium"
+          },
+          {
+            "category": "payment_pressure",
+            "pattern_matched": "Advance-fee scam pattern",
+            "snippet": "customs duty",
+            "severity": "high"
+          },
+          {
+            "category": "artificial_urgency",
+            "pattern_matched": "Time-pressure coercion",
+            "snippet": "within 12 hours",
+            "severity": "high"
+          },
+          {
+            "category": "impersonation_mismatch",
+            "pattern_matched": "claimed_brand_fedex_mismatched_domain_fedex-customs-pay.example.com",
+            "snippet": "Claimed brand 'fedex' with link 'http://fedex-customs-pay.example.com'",
+            "severity": "critical"
+          }
+        ],
+        "urls": [
+          {
+            "raw_url": "http://fedex-customs-pay.example.com",
+            "scheme": "http",
+            "host": "fedex-customs-pay.example.com",
+            "path": "",
+            "is_ip_address": false,
+            "is_shortener": false,
+            "is_suspicious_tld": false,
+            "certainty": "confidently_extracted",
+            "reconstructed_candidate": null,
+            "notes": []
+          }
+        ]
+      },
+      {
+        "id": "scam_fake_job_04",
+        "expected_class": "scam",
+        "risk_level": "high",
+        "signal_count": 2,
+        "signals": [
+          {
+            "category": "payment_pressure",
+            "pattern_matched": "direct_upi_address",
+            "snippet": "hr-amazon@upi",
+            "severity": "high"
+          },
+          {
+            "category": "payment_pressure",
+            "pattern_matched": "Advance-fee scam pattern",
+            "snippet": "registration fee",
+            "severity": "high"
+          }
+        ],
+        "urls": []
+      },
+      {
+        "id": "scam_upi_payment_05",
+        "expected_class": "scam",
+        "risk_level": "none",
+        "signal_count": 0,
+        "signals": [],
+        "urls": []
+      },
+      {
+        "id": "scam_otp_takeover_06",
+        "expected_class": "scam",
+        "risk_level": "critical",
+        "signal_count": 3,
+        "signals": [
+          {
+            "category": "otp_harvesting",
+            "pattern_matched": "Direct request to disclose OTP/verification code",
+            "snippet": "share the OTP",
+            "severity": "critical"
+          },
+          {
+            "category": "otp_harvesting",
+            "pattern_matched": "Reference to an incoming authentication code",
+            "snippet": "OTP received on SMS",
+            "severity": "high"
+          },
+          {
+            "category": "artificial_urgency",
+            "pattern_matched": "Time-pressure coercion",
+            "snippet": "immediately",
+            "severity": "high"
+          }
+        ],
+        "urls": []
+      },
+      {
+        "id": "scam_digital_arrest_07",
+        "expected_class": "scam",
+        "risk_level": "critical",
+        "signal_count": 1,
+        "signals": [
+          {
+            "category": "artificial_urgency",
+            "pattern_matched": "Legal/police intimidation coercion",
+            "snippet": "arrest warrant",
+            "severity": "critical"
+          }
+        ],
+        "urls": []
+      },
+      {
+        "id": "scam_pure_social_eng_08",
+        "expected_class": "scam",
+        "risk_level": "none",
+        "signal_count": 0,
+        "signals": [],
+        "urls": []
+      },
+      {
+        "id": "legit_bank_txn_09",
+        "expected_class": "legitimate",
+        "risk_level": "none",
+        "signal_count": 0,
+        "signals": [],
+        "urls": []
+      },
+      {
+        "id": "legit_delivery_update_10",
+        "expected_class": "legitimate",
+        "risk_level": "none",
+        "signal_count": 0,
+        "signals": [],
+        "urls": []
+      },
+      {
+        "id": "legit_electricity_reminder_11",
+        "expected_class": "legitimate",
+        "risk_level": "none",
+        "signal_count": 0,
+        "signals": [],
+        "urls": []
+      },
+      {
+        "id": "legit_job_ack_12",
+        "expected_class": "legitimate",
+        "risk_level": "none",
+        "signal_count": 0,
+        "signals": [],
+        "urls": []
+      },
+      {
+        "id": "legit_bill_split_13",
+        "expected_class": "legitimate",
+        "risk_level": "none",
+        "signal_count": 0,
+        "signals": [],
+        "urls": []
+      },
+      {
+        "id": "legit_otp_notification_14",
+        "expected_class": "legitimate",
+        "risk_level": "none",
+        "signal_count": 0,
+        "signals": [],
+        "urls": []
+      },
+      {
+        "id": "legit_account_notice_15",
+        "expected_class": "legitimate",
+        "risk_level": "none",
+        "signal_count": 0,
+        "signals": [],
+        "urls": []
+      },
+      {
+        "id": "legit_promotional_16",
+        "expected_class": "legitimate",
+        "risk_level": "none",
+        "signal_count": 0,
+        "signals": [],
+        "urls": []
+      }
+    ],
+    "model": [
+      {
+        "source": "model",
+        "model_name": "llama3:latest",
+        "verdict": "scam",
+        "summary": "The message is impersonating the State Bank of India (SBI) and is attempting to trick the recipient into verifying their PAN and NetBanking password by clicking on a suspicious link.",
+        "tactics": [
+          {
+            "type": "impersonation_fraud",
+            "evidence": "The message claims to be from SBI, but the URL provided does not match any official SBI website or portal."
+          },
+          {
+            "type": "coercive_urgency",
+            "evidence": "The message creates a sense of urgency by stating that the account will be terminated in 24 hours if the recipient does not take action."
+          }
+        ],
+        "requests": [
+          "click on suspicious link"
+        ],
+        "entities": [
+          "State Bank of India (SBI)"
+        ],
+        "urls": [
+          "http://sbi-kyc-verify.example.com/login"
+        ],
+        "recommended_action": "Do not click on the provided link. Instead, go directly to the official SBI website or mobile app to verify your PAN and NetBanking password.",
+        "uncertainty_reason": "The message's claim of being from SBI is unverified, and the URL provided does not match any official SBI website or portal.",
+        "confidence_label": "model_unvalidated",
+        "requests_secret_disclosure": false,
+        "requests_payment": false,
+        "requests_external_action": true,
+        "contains_negative_security_warning": false,
+        "contains_transaction_notification": false,
+        "contains_normal_due_date_language": false,
+        "impersonates_authority": true,
+        "uses_coercive_urgency": true,
+        "id": "scam_bank_kyc_01",
+        "model_verdict": "scam",
+        "latency_seconds": 52.78,
+        "expected_class": "scam"
+      },
+      {
+        "source": "model",
+        "model_name": "llama3:latest",
+        "verdict": "scam",
+        "summary": "The message is an impersonation attempt to deceive the consumer into believing their electricity power connection will be disconnected, and they must take immediate action to avoid disconnection.",
+        "tactics": [
+          {
+            "type": "coercive_urgency",
+            "evidence": "your electricity power connection will be disconnected tonight at 9:30 PM"
+          },
+          {
+            "type": "authority_impersonation",
+            "evidence": "Electricity Office Alert"
+          }
+        ],
+        "requests": [
+          "click http://bill-update.example.com"
+        ],
+        "entities": [
+          "Electricity Office",
+          "Mr. Sharma"
+        ],
+        "urls": [
+          "http://bill-update.example.com"
+        ],
+        "recommended_action": "Do not click the link or contact Mr. Sharma. Instead, verify your electricity bill and contact your actual electricity provider to resolve any issues.",
+        "uncertainty_reason": "The message lacks official documentation or a legitimate reason for disconnection, and the urgency is suspiciously high.",
+        "confidence_label": "model_unvalidated",
+        "requests_secret_disclosure": false,
+        "requests_payment": false,
+        "requests_external_action": true,
+        "contains_negative_security_warning": false,
+        "contains_transaction_notification": false,
+        "contains_normal_due_date_language": false,
+        "impersonates_authority": true,
+        "uses_coercive_urgency": true,
+        "id": "scam_electricity_02",
+        "model_verdict": "scam",
+        "latency_seconds": 44.08,
+        "expected_class": "scam"
+      },
+      {
+        "source": "model",
+        "model_name": "llama3:latest",
+        "verdict": "scam",
+        "summary": "Fake parcel delivery notification with urgent payment demand",
+        "tactics": [
+          {
+            "type": "authority_impersonation",
+            "evidence": "FedEx Express"
+          },
+          {
+            "type": "coercive_urgency",
+            "evidence": "Delivery will be cancelled and package returned to sender unless customs duty is cleared within 12 hours"
+          }
+        ],
+        "requests": [
+          "clear payment at the provided link"
+        ],
+        "entities": [
+          "FedEx Express",
+          "central customs hub"
+        ],
+        "urls": [
+          "http://fedex-customs-pay.example.com"
+        ],
+        "recommended_action": "Do not click on the link or provide any payment information. Legitimate FedEx notifications will never demand immediate payment.",
+        "uncertainty_reason": "None",
+        "confidence_label": "model_unvalidated",
+        "requests_secret_disclosure": false,
+        "requests_payment": true,
+        "requests_external_action": true,
+        "contains_negative_security_warning": false,
+        "contains_transaction_notification": false,
+        "contains_normal_due_date_language": false,
+        "impersonates_authority": true,
+        "uses_coercive_urgency": true,
+        "id": "scam_delivery_customs_03",
+        "model_verdict": "scam",
+        "latency_seconds": 38.78,
+        "expected_class": "scam"
+      },
+      {
+        "source": "model",
+        "model_name": "llama3:latest",
+        "verdict": "scam",
+        "summary": "The message is a phishing attempt to trick the recipient into paying a registration fee for a non-existent job opportunity.",
+        "tactics": [
+          {
+            "type": "lottery_bait",
+            "evidence": "Congratulations! Amazon Global Careers selected your resume..."
+          },
+          {
+            "type": "authority_impersonation",
+            "evidence": "Amazon"
+          }
+        ],
+        "requests": [
+          "pay mandatory refundable registration fee Rs 1200 via UPI"
+        ],
+        "entities": [
+          "Amazon",
+          "hr-amazon@upi"
+        ],
+        "urls": [],
+        "recommended_action": "Do not pay any fees or provide personal information. Legitimate job opportunities do not require upfront payments.",
+        "uncertainty_reason": "The message's claims of a selected resume and job opportunity are unverified and likely false.",
+        "confidence_label": "model_unvalidated",
+        "requests_secret_disclosure": false,
+        "requests_payment": true,
+        "requests_external_action": false,
+        "contains_negative_security_warning": false,
+        "contains_transaction_notification": false,
+        "contains_normal_due_date_language": false,
+        "impersonates_authority": true,
+        "uses_coercive_urgency": false,
+        "id": "scam_fake_job_04",
+        "model_verdict": "scam",
+        "latency_seconds": 40.49,
+        "expected_class": "scam"
+      },
+      {
+        "source": "model",
+        "model_name": "llama3:latest",
+        "verdict": "scam",
+        "summary": "The message is attempting to trick the buyer into scanning a QR code, which could potentially steal their financial information.",
+        "tactics": [
+          {
+            "type": "lottery_bait",
+            "evidence": "The message claims an advance payment of Rs 8500, which is likely too good to be true."
+          }
+        ],
+        "requests": [
+          "scan this attached QR code"
+        ],
+        "entities": [
+          "OLX",
+          "GooglePay",
+          "PhonePe"
+        ],
+        "urls": [
+          "<no URLs detected>"
+        ],
+        "recommended_action": "Do not scan the QR code. Legitimate transactions do not require you to scan a QR code.",
+        "uncertainty_reason": "The message is too good to be true, and it's likely an attempt to steal financial information.",
+        "confidence_label": "model_unvalidated",
+        "requests_secret_disclosure": false,
+        "requests_payment": false,
+        "requests_external_action": true,
+        "contains_negative_security_warning": false,
+        "contains_transaction_notification": false,
+        "contains_normal_due_date_language": false,
+        "impersonates_authority": false,
+        "uses_coercive_urgency": false,
+        "id": "scam_upi_payment_05",
+        "model_verdict": "scam",
+        "latency_seconds": 38.98,
+        "expected_class": "scam"
+      },
+      {
+        "source": "model",
+        "model_name": "llama3:latest",
+        "verdict": "scam",
+        "summary": "The message is an attempt to trick the user into sharing their one-time password (OTP) by claiming a multi-device login detection from Russia. This is a common phishing tactic.",
+        "tactics": [
+          {
+            "type": "authority_impersonation",
+            "evidence": "WhatsApp Support Team"
+          },
+          {
+            "type": "fear_threat",
+            "evidence": "To block the unauthorized login and protect your account"
+          }
+        ],
+        "requests": [
+          "share the OTP received on SMS with this chat immediately"
+        ],
+        "entities": [
+          "WhatsApp"
+        ],
+        "urls": [],
+        "recommended_action": "Do not share any sensitive information, including the OTP. Report this message to WhatsApp's official support channel.",
+        "uncertainty_reason": "The message claims to be from a legitimate source but asks for sensitive information without providing a secure method to verify the authenticity of the request.",
+        "confidence_label": "model_unvalidated",
+        "requests_secret_disclosure": true,
+        "requests_payment": false,
+        "requests_external_action": false,
+        "contains_negative_security_warning": false,
+        "contains_transaction_notification": false,
+        "contains_normal_due_date_language": false,
+        "impersonates_authority": true,
+        "uses_coercive_urgency": true,
+        "id": "scam_otp_takeover_06",
+        "model_verdict": "scam",
+        "latency_seconds": 42.55,
+        "expected_class": "scam"
+      },
+      {
+        "source": "model",
+        "model_name": "llama3:latest",
+        "verdict": "scam",
+        "summary": "The message claims to be from the Central Police Crime Branch & Cyber Cell, but it's likely a phishing attempt to trick the recipient into participating in a fraudulent scheme.",
+        "tactics": [
+          {
+            "type": "authority_impersonation",
+            "evidence": "The message claims to be from the Central Police Crime Branch & Cyber Cell, which is an official law enforcement agency."
+          },
+          {
+            "type": "coercive_urgency",
+            "evidence": "The message creates a sense of urgency by stating that an arrest warrant has been issued and demanding the recipient stay on a WhatsApp video call for verification."
+          }
+        ],
+        "requests": [
+          "stay on this WhatsApp video call"
+        ],
+        "entities": [
+          "Central Police Crime Branch & Cyber Cell",
+          "Mumbai airport",
+          "Senior Inspector Patil"
+        ],
+        "urls": [],
+        "recommended_action": "Do not engage with the message or participate in any requested actions. Instead, contact your local police department to verify any official communications.",
+        "uncertainty_reason": "The message's claims and demands are unverified and may be an attempt to deceive the recipient.",
+        "confidence_label": "model_unvalidated",
+        "requests_secret_disclosure": false,
+        "requests_payment": false,
+        "requests_external_action": true,
+        "contains_negative_security_warning": false,
+        "contains_transaction_notification": false,
+        "contains_normal_due_date_language": false,
+        "impersonates_authority": true,
+        "uses_coercive_urgency": true,
+        "id": "scam_digital_arrest_07",
+        "model_verdict": "scam",
+        "latency_seconds": 47.51,
+        "expected_class": "scam"
+      },
+      {
+        "source": "model",
+        "model_name": "llama3:latest",
+        "verdict": "scam",
+        "summary": "The message is an impersonation attempt, using emotional manipulation to gain trust and request sensitive information.",
+        "tactics": [
+          {
+            "type": "emotional_manipulation",
+            "evidence": "The message starts with a personal and relatable scenario (phone falling into water) to create empathy."
+          }
+        ],
+        "requests": [
+          "save temporary number",
+          "send contact details and family password for Grandpa's insurance binder"
+        ],
+        "entities": [
+          "Grandpa's insurance binder"
+        ],
+        "urls": [],
+        "recommended_action": "Do not respond or provide any sensitive information. Verify the authenticity of the request with your mom.",
+        "uncertainty_reason": "The message is trying to create a sense of urgency and emotional connection, which is suspicious.",
+        "confidence_label": "model_unvalidated",
+        "requests_secret_disclosure": true,
+        "requests_payment": false,
+        "requests_external_action": false,
+        "contains_negative_security_warning": false,
+        "contains_transaction_notification": false,
+        "contains_normal_due_date_language": false,
+        "impersonates_authority": true,
+        "uses_coercive_urgency": true,
+        "id": "scam_pure_social_eng_08",
+        "model_verdict": "scam",
+        "latency_seconds": 37.18,
+        "expected_class": "scam"
+      },
+      {
+        "source": "model",
+        "model_name": "llama3:latest",
+        "verdict": "likely_legitimate",
+        "summary": "Standard transactional notification from State Bank of India (SBI) regarding a debit from the user's account.",
+        "tactics": [
+          {
+            "type": "negative_security_warning",
+            "evidence": "forward this SMS to 9223008333 to block your card"
+          }
+        ],
+        "requests": [
+          "forward this SMS"
+        ],
+        "entities": [
+          "State Bank of India (SBI)"
+        ],
+        "urls": [],
+        "recommended_action": "Verify the transaction and contact SBI if unsure",
+        "uncertainty_reason": "None",
+        "confidence_label": "model_unvalidated",
+        "requests_secret_disclosure": false,
+        "requests_payment": false,
+        "requests_external_action": true,
+        "contains_negative_security_warning": true,
+        "contains_transaction_notification": true,
+        "contains_normal_due_date_language": false,
+        "impersonates_authority": false,
+        "uses_coercive_urgency": false,
+        "id": "legit_bank_txn_09",
+        "model_verdict": "likely_legitimate",
+        "latency_seconds": 30.23,
+        "expected_class": "legitimate"
+      },
+      {
+        "source": "model",
+        "model_name": "llama3:latest",
+        "verdict": "likely_legitimate",
+        "summary": "Amazon order tracking notification with expected delivery details and a recommendation to track the package status in the official app.",
+        "tactics": [
+          {
+            "type": "normal_due_date_language",
+            "evidence": "expected delivery today by 8 PM"
+          }
+        ],
+        "requests": [
+          "track live package status in the Amazon app"
+        ],
+        "entities": [
+          "Amazon",
+          "Suresh"
+        ],
+        "urls": [
+          "https://www.amazon.com/"
+        ],
+        "recommended_action": "Check your order status and track the package as recommended",
+        "uncertainty_reason": "None",
+        "confidence_label": "model_unvalidated",
+        "requests_secret_disclosure": false,
+        "requests_payment": false,
+        "requests_external_action": false,
+        "contains_negative_security_warning": false,
+        "contains_transaction_notification": true,
+        "contains_normal_due_date_language": true,
+        "impersonates_authority": false,
+        "uses_coercive_urgency": false,
+        "id": "legit_delivery_update_10",
+        "model_verdict": "likely_legitimate",
+        "latency_seconds": 30.86,
+        "expected_class": "legitimate"
+      },
+      {
+        "source": "model",
+        "model_name": "llama3:latest",
+        "verdict": "likely_legitimate",
+        "summary": "A standard billing reminder for an electricity bill with a due date and payment instructions.",
+        "tactics": [
+          {
+            "type": "normal_due_date_language",
+            "evidence": "Due date is 15-Oct-2026"
+          }
+        ],
+        "requests": [
+          "pay on time via official consumer portal or your electricity board mobile app"
+        ],
+        "entities": [
+          "CA 10098231",
+          "Consumer",
+          "electricity board"
+        ],
+        "urls": [],
+        "recommended_action": "Verify the due date and pay the bill on time using the official channels",
+        "uncertainty_reason": "None",
+        "confidence_label": "model_unvalidated",
+        "requests_secret_disclosure": false,
+        "requests_payment": true,
+        "requests_external_action": false,
+        "contains_negative_security_warning": false,
+        "contains_transaction_notification": true,
+        "contains_normal_due_date_language": true,
+        "impersonates_authority": false,
+        "uses_coercive_urgency": false,
+        "id": "legit_electricity_reminder_11",
+        "model_verdict": "likely_legitimate",
+        "latency_seconds": 31.38,
+        "expected_class": "legitimate"
+      },
+      {
+        "source": "model",
+        "model_name": "llama3:latest",
+        "verdict": "likely_legitimate",
+        "summary": "Job application confirmation message from TechCorp, thanking the applicant for their submission and informing them of the expected timeline for review.",
+        "tactics": [
+          {
+            "type": "authority_impersonation",
+            "evidence": "The message claims to be from TechCorp's recruiting team, which is a legitimate authority in this context."
+          }
+        ],
+        "requests": [],
+        "entities": [
+          "TechCorp"
+        ],
+        "urls": [],
+        "recommended_action": "Wait for the expected timeline of 5-7 business days before following up on the application status.",
+        "uncertainty_reason": "None",
+        "confidence_label": "model_unvalidated",
+        "requests_secret_disclosure": false,
+        "requests_payment": false,
+        "requests_external_action": false,
+        "contains_negative_security_warning": false,
+        "contains_transaction_notification": false,
+        "contains_normal_due_date_language": false,
+        "impersonates_authority": true,
+        "uses_coercive_urgency": false,
+        "id": "legit_job_ack_12",
+        "model_verdict": "likely_legitimate",
+        "latency_seconds": 32.84,
+        "expected_class": "legitimate"
+      },
+      {
+        "source": "model",
+        "model_name": "llama3:latest",
+        "verdict": "likely_legitimate",
+        "summary": "A friendly message from someone who attended dinner with the recipient, requesting payment for their share of the bill.",
+        "tactics": [
+          {
+            "type": "social_engineering",
+            "evidence": "The message starts with a friendly greeting and mentions a shared experience to establish a rapport with the recipient."
+          }
+        ],
+        "requests": [
+          "send money"
+        ],
+        "entities": [
+          "dinner",
+          "Rs 1800",
+          "Rs 900"
+        ],
+        "urls": [],
+        "recommended_action": "Verify the authenticity of the request by contacting the sender or checking your shared expenses records.",
+        "uncertainty_reason": "None",
+        "confidence_label": "model_unvalidated",
+        "requests_secret_disclosure": false,
+        "requests_payment": true,
+        "requests_external_action": false,
+        "contains_negative_security_warning": false,
+        "contains_transaction_notification": false,
+        "contains_normal_due_date_language": false,
+        "impersonates_authority": false,
+        "uses_coercive_urgency": false,
+        "id": "legit_bill_split_13",
+        "model_verdict": "likely_legitimate",
+        "latency_seconds": 32.76,
+        "expected_class": "legitimate"
+      },
+      {
+        "source": "model",
+        "model_name": "llama3:latest",
+        "verdict": "likely_legitimate",
+        "summary": "A standard security notice from HDFC Bank providing a one-time password (OTP) for logging into their NetBanking account.",
+        "tactics": [
+          {
+            "type": "negative_security_warning",
+            "evidence": "DO NOT share this OTP with anyone, including bank employees or customer care officials."
+          }
+        ],
+        "requests": [],
+        "entities": [
+          "HDFC Bank"
+        ],
+        "urls": [],
+        "recommended_action": "Verify the authenticity of the message and use the provided OTP to log in to your HDFC NetBanking account.",
+        "uncertainty_reason": "",
+        "confidence_label": "model_unvalidated",
+        "requests_secret_disclosure": false,
+        "requests_payment": false,
+        "requests_external_action": false,
+        "contains_negative_security_warning": true,
+        "contains_transaction_notification": false,
+        "contains_normal_due_date_language": false,
+        "impersonates_authority": false,
+        "uses_coercive_urgency": false,
+        "id": "legit_otp_notification_14",
+        "model_verdict": "likely_legitimate",
+        "latency_seconds": 30.92,
+        "expected_class": "legitimate"
+      },
+      {
+        "source": "model",
+        "model_name": "llama3:latest",
+        "verdict": "likely_legitimate",
+        "summary": "A standard security alert informing the user of a password change and recommending they check their account's recent activity.",
+        "tactics": [
+          {
+            "type": "official_app_guidance",
+            "evidence": "Please visit your Google Account Security Dashboard"
+          }
+        ],
+        "requests": [
+          "visit your Google Account Security Dashboard"
+        ],
+        "entities": [
+          "Google Account",
+          "Chrome",
+          "Windows"
+        ],
+        "urls": [
+          "https://www.google.com/"
+        ],
+        "recommended_action": "Check your account's recent activity to ensure no unauthorized changes were made",
+        "uncertainty_reason": "None",
+        "confidence_label": "model_unvalidated",
+        "requests_secret_disclosure": false,
+        "requests_payment": false,
+        "requests_external_action": false,
+        "contains_negative_security_warning": true,
+        "contains_transaction_notification": false,
+        "contains_normal_due_date_language": false,
+        "impersonates_authority": false,
+        "uses_coercive_urgency": false,
+        "id": "legit_account_notice_15",
+        "model_verdict": "likely_legitimate",
+        "latency_seconds": 32.39,
+        "expected_class": "legitimate"
+      },
+      {
+        "source": "model",
+        "model_name": "llama3:latest",
+        "verdict": "likely_legitimate",
+        "summary": "A promotional offer for a bookstore, encouraging customers to visit their stores and use a specific code to get a discount.",
+        "tactics": [
+          {
+            "type": "normal_due_date_language",
+            "evidence": "Offer valid till Sunday 8 PM"
+          }
+        ],
+        "requests": [
+          "Show this message at billing counter to claim store discount"
+        ],
+        "entities": [
+          "City Bookstore"
+        ],
+        "urls": [],
+        "recommended_action": "Check the official City Bookstore website or visit their stores to learn more about the offer and its terms.",
+        "uncertainty_reason": "None",
+        "confidence_label": "model_unvalidated",
+        "requests_secret_disclosure": false,
+        "requests_payment": false,
+        "requests_external_action": false,
+        "contains_negative_security_warning": false,
+        "contains_transaction_notification": false,
+        "contains_normal_due_date_language": true,
+        "impersonates_authority": false,
+        "uses_coercive_urgency": false,
+        "id": "legit_promotional_16",
+        "model_verdict": "likely_legitimate",
+        "latency_seconds": 32.17,
+        "expected_class": "legitimate"
+      }
+    ],
+    "combined": [
+      {
+        "id": "scam_bank_kyc_01",
+        "expected_class": "scam",
+        "final_verdict": "scam",
+        "confidence": "high",
+        "decision_rationale": [
+          "CRITICAL RULE TRIGGERED: One or more critical deterministic rules matched (direct OTP/credential harvest or IP link)."
+        ],
+        "plain_english_summary": "The message is impersonating the State Bank of India (SBI) and is attempting to trick the recipient into verifying their PAN and NetBanking password by clicking on a suspicious link.",
+        "recommended_action": "DO NOT enter passwords, PINs, or banking details. Delete the message and block the sender."
+      },
+      {
+        "id": "scam_electricity_02",
+        "expected_class": "scam",
+        "final_verdict": "scam",
+        "confidence": "high",
+        "decision_rationale": [
+          "AGREEMENT: AI semantic analysis and deterministic checks independently classified this as a scam."
+        ],
+        "plain_english_summary": "The message is an impersonation attempt to deceive the consumer into believing their electricity power connection will be disconnected, and they must take immediate action to avoid disconnection.",
+        "recommended_action": "Do NOT click any links, do NOT send money, and do NOT reply. Block the sender and report the number."
+      },
+      {
+        "id": "scam_delivery_customs_03",
+        "expected_class": "scam",
+        "final_verdict": "scam",
+        "confidence": "high",
+        "decision_rationale": [
+          "CRITICAL RULE TRIGGERED: One or more critical deterministic rules matched (direct OTP/credential harvest or IP link)."
+        ],
+        "plain_english_summary": "Fake parcel delivery notification with urgent payment demand",
+        "recommended_action": "Do NOT click any links, do NOT send money, and do NOT reply. Block the sender and report the number."
+      },
+      {
+        "id": "scam_fake_job_04",
+        "expected_class": "scam",
+        "final_verdict": "scam",
+        "confidence": "high",
+        "decision_rationale": [
+          "AGREEMENT: AI semantic analysis and deterministic checks independently classified this as a scam."
+        ],
+        "plain_english_summary": "The message is a phishing attempt to trick the recipient into paying a registration fee for a non-existent job opportunity.",
+        "recommended_action": "Do NOT click any links, do NOT send money, and do NOT reply. Block the sender and report the number."
+      },
+      {
+        "id": "scam_upi_payment_05",
+        "expected_class": "scam",
+        "final_verdict": "scam",
+        "confidence": "medium",
+        "decision_rationale": [
+          "SEMANTIC DETECTION: The AI model detected scam intent through contextual manipulation and deceptive pretext."
+        ],
+        "plain_english_summary": "The message is attempting to trick the buyer into scanning a QR code, which could potentially steal their financial information.",
+        "recommended_action": "Do NOT click any links, do NOT send money, and do NOT reply. Block the sender and report the number."
+      },
+      {
+        "id": "scam_otp_takeover_06",
+        "expected_class": "scam",
+        "final_verdict": "scam",
+        "confidence": "high",
+        "decision_rationale": [
+          "CRITICAL RULE TRIGGERED: One or more critical deterministic rules matched (direct OTP/credential harvest or IP link)."
+        ],
+        "plain_english_summary": "The message is an attempt to trick the user into sharing their one-time password (OTP) by claiming a multi-device login detection from Russia. This is a common phishing tactic.",
+        "recommended_action": "CRITICAL WARNING: NEVER share your OTP or 6-digit verification code with anyone. Real banks and service providers will never ask you to disclose an OTP."
+      },
+      {
+        "id": "scam_digital_arrest_07",
+        "expected_class": "scam",
+        "final_verdict": "scam",
+        "confidence": "high",
+        "decision_rationale": [
+          "CRITICAL RULE TRIGGERED: One or more critical deterministic rules matched (direct OTP/credential harvest or IP link)."
+        ],
+        "plain_english_summary": "The message claims to be from the Central Police Crime Branch & Cyber Cell, but it's likely a phishing attempt to trick the recipient into participating in a fraudulent scheme.",
+        "recommended_action": "Do NOT click any links, do NOT send money, and do NOT reply. Block the sender and report the number."
+      },
+      {
+        "id": "scam_pure_social_eng_08",
+        "expected_class": "scam",
+        "final_verdict": "scam",
+        "confidence": "medium",
+        "decision_rationale": [
+          "SEMANTIC DETECTION: The AI model detected scam intent through contextual manipulation and deceptive pretext."
+        ],
+        "plain_english_summary": "The message is an impersonation attempt, using emotional manipulation to gain trust and request sensitive information.",
+        "recommended_action": "Do NOT click any links, do NOT send money, and do NOT reply. Block the sender and report the number."
+      },
+      {
+        "id": "legit_bank_txn_09",
+        "expected_class": "legitimate",
+        "final_verdict": "likely_legitimate",
+        "confidence": "medium",
+        "decision_rationale": [
+          "CLEAN SIGNALS: The text appears to be standard routine communication with no detected threats."
+        ],
+        "plain_english_summary": "Standard transactional notification from State Bank of India (SBI) regarding a debit from the user's account.",
+        "recommended_action": "No suspicious activity detected. Continue standard caution and never share one-time passwords."
+      },
+      {
+        "id": "legit_delivery_update_10",
+        "expected_class": "legitimate",
+        "final_verdict": "likely_legitimate",
+        "confidence": "medium",
+        "decision_rationale": [
+          "CLEAN SIGNALS: The text appears to be standard routine communication with no detected threats."
+        ],
+        "plain_english_summary": "Amazon order tracking notification with expected delivery details and a recommendation to track the package status in the official app.",
+        "recommended_action": "No suspicious activity detected. Continue standard caution and never share one-time passwords."
+      },
+      {
+        "id": "legit_electricity_reminder_11",
+        "expected_class": "legitimate",
+        "final_verdict": "likely_legitimate",
+        "confidence": "medium",
+        "decision_rationale": [
+          "CLEAN SIGNALS: The text appears to be standard routine communication with no detected threats."
+        ],
+        "plain_english_summary": "A standard billing reminder for an electricity bill with a due date and payment instructions.",
+        "recommended_action": "No suspicious activity detected. Continue standard caution and never share one-time passwords."
+      },
+      {
+        "id": "legit_job_ack_12",
+        "expected_class": "legitimate",
+        "final_verdict": "likely_legitimate",
+        "confidence": "medium",
+        "decision_rationale": [
+          "CLEAN SIGNALS: The text appears to be standard routine communication with no detected threats."
+        ],
+        "plain_english_summary": "Job application confirmation message from TechCorp, thanking the applicant for their submission and informing them of the expected timeline for review.",
+        "recommended_action": "No suspicious activity detected. Continue standard caution and never share one-time passwords."
+      },
+      {
+        "id": "legit_bill_split_13",
+        "expected_class": "legitimate",
+        "final_verdict": "likely_legitimate",
+        "confidence": "medium",
+        "decision_rationale": [
+          "CLEAN SIGNALS: The text appears to be standard routine communication with no detected threats."
+        ],
+        "plain_english_summary": "A friendly message from someone who attended dinner with the recipient, requesting payment for their share of the bill.",
+        "recommended_action": "No suspicious activity detected. Continue standard caution and never share one-time passwords."
+      },
+      {
+        "id": "legit_otp_notification_14",
+        "expected_class": "legitimate",
+        "final_verdict": "likely_legitimate",
+        "confidence": "medium",
+        "decision_rationale": [
+          "CLEAN SIGNALS: The text appears to be standard routine communication with no detected threats."
+        ],
+        "plain_english_summary": "A standard security notice from HDFC Bank providing a one-time password (OTP) for logging into their NetBanking account.",
+        "recommended_action": "No suspicious activity detected. Continue standard caution and never share one-time passwords."
+      },
+      {
+        "id": "legit_account_notice_15",
+        "expected_class": "legitimate",
+        "final_verdict": "likely_legitimate",
+        "confidence": "medium",
+        "decision_rationale": [
+          "CLEAN SIGNALS: The text appears to be standard routine communication with no detected threats."
+        ],
+        "plain_english_summary": "A standard security alert informing the user of a password change and recommending they check their account's recent activity.",
+        "recommended_action": "No suspicious activity detected. Continue standard caution and never share one-time passwords."
+      },
+      {
+        "id": "legit_promotional_16",
+        "expected_class": "legitimate",
+        "final_verdict": "likely_legitimate",
+        "confidence": "medium",
+        "decision_rationale": [
+          "CLEAN SIGNALS: The text appears to be standard routine communication with no detected threats."
+        ],
+        "plain_english_summary": "A promotional offer for a bookstore, encouraging customers to visit their stores and use a specific code to get a discount.",
+        "recommended_action": "No suspicious activity detected. Continue standard caution and never share one-time passwords."
+      }
+    ]
+  }
+}

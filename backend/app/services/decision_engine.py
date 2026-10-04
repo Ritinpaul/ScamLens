@@ -71,7 +71,24 @@ class DecisionEngine:
         # Default working verdict based on AI
         ai_verdict = ai_output.verdict if ai_output else None
 
-        # 3. Decision Matrix with Precedence
+        # Contextual flags from AI model
+        is_protective_notice = (
+            ai_output.contains_negative_security_warning
+            and not ai_output.requests_secret_disclosure
+            and not ai_output.requests_payment
+            and not ai_output.requests_external_action
+            and not ai_output.uses_coercive_urgency
+        ) if ai_output else False
+
+        is_routine_informational = (
+            (ai_output.contains_transaction_notification or ai_output.contains_normal_due_date_language)
+            and not ai_output.requests_secret_disclosure
+            and not ai_output.requests_payment
+            and not ai_output.requests_external_action
+            and not ai_output.uses_coercive_urgency
+        ) if ai_output else False
+
+        # 3. Decision Matrix with Evidence Combinations and Contextual Calibration
         if has_critical_verifier:
             verdict = FinalVerdict.SCAM
             confidence = ConfidenceRating.HIGH
@@ -81,15 +98,22 @@ class DecisionEngine:
                 rationale.append("SAFETY OVERRIDE: The AI model considered the message benign/insufficient, but deterministic inspection proved direct credential/OTP threats.")
 
         elif ai_verdict == AiVerdict.SCAM:
-            verdict = FinalVerdict.SCAM
-            if has_high_verifier:
-                confidence = ConfidenceRating.HIGH
-                conf_exp = "Both the AI model and deterministic security signatures flagged this message as malicious."
-                rationale.append("AGREEMENT: AI semantic analysis and deterministic checks independently classified this as a scam.")
-            else:
+            if is_protective_notice and not verifier_output.signals:
+                # The model called it scam despite acknowledging protective security instructions with no dangerous requests
+                verdict = FinalVerdict.LIKELY_LEGITIMATE
                 confidence = ConfidenceRating.MEDIUM
-                conf_exp = "The AI model identified clear manipulation tactics, though no hardcoded blacklisted patterns were matched."
-                rationale.append("SEMANTIC DETECTION: The AI model detected scam intent through contextual manipulation and deceptive pretext.")
+                conf_exp = "The message contains protective security advice ('do not share') with no demands for secret disclosure or external action."
+                rationale.append("CONTEXT CALIBRATION: Explicit negative security warning ('do not share') detected with no attack payload; confirmed benign notification.")
+            else:
+                verdict = FinalVerdict.SCAM
+                if has_high_verifier:
+                    confidence = ConfidenceRating.HIGH
+                    conf_exp = "Both the AI model and deterministic security signatures flagged this message as malicious."
+                    rationale.append("AGREEMENT: AI semantic analysis and deterministic checks independently classified this as a scam.")
+                else:
+                    confidence = ConfidenceRating.MEDIUM
+                    conf_exp = "The AI model identified clear manipulation tactics, though no hardcoded blacklisted patterns were matched."
+                    rationale.append("SEMANTIC DETECTION: The AI model detected scam intent through contextual manipulation and deceptive pretext.")
 
         elif has_high_verifier:
             verdict = FinalVerdict.SUSPICIOUS
@@ -98,10 +122,17 @@ class DecisionEngine:
             rationale.append("DETERMINISTIC FLAG: Detected shortened links or artificial urgency patterns typical of unverified outreach.")
 
         elif ai_verdict == AiVerdict.SUSPICIOUS:
-            verdict = FinalVerdict.SUSPICIOUS
-            confidence = ConfidenceRating.MEDIUM
-            conf_exp = "The AI model identified subtle persuasion or unverified claims, though no explicit malicious payloads were found."
-            rationale.append("AI FLAG: Contextual signals suggest caution due to unverified claims or unexpected communication style.")
+            if (is_protective_notice or is_routine_informational) and not verifier_output.signals:
+                # Model expressed hyper-vigilance on a routine notification with benign words
+                verdict = FinalVerdict.LIKELY_LEGITIMATE
+                confidence = ConfidenceRating.MEDIUM
+                conf_exp = "Semantic context confirms standard transactional or due-date notification without manipulative coercion or external attack links."
+                rationale.append("CONTEXT CALIBRATION: Routine informational notification or standard commercial due-date notice without coercive threats or unverified external links. Evaluated as legitimate.")
+            else:
+                verdict = FinalVerdict.SUSPICIOUS
+                confidence = ConfidenceRating.MEDIUM
+                conf_exp = "The AI model identified subtle persuasion or unverified claims, though no explicit malicious payloads were found."
+                rationale.append("AI FLAG: Contextual signals suggest caution due to unverified claims or unexpected communication style.")
 
         elif ai_verdict == AiVerdict.LIKELY_LEGITIMATE:
             if not verifier_output.signals:

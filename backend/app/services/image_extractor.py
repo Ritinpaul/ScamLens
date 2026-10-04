@@ -91,7 +91,7 @@ class ImageTextExtractor:
 
     def preprocess_image(self, image_bytes: bytes) -> bytes:
         """
-        Enhances image contrast and normalizes grayscale to maximize OCR character recognition.
+        Enhances image contrast, sharpens edges, and normalizes grayscale to maximize OCR character recognition.
         """
         try:
             buf = io.BytesIO(image_bytes)
@@ -99,18 +99,22 @@ class ImageTextExtractor:
                 # Convert to grayscale
                 gray = img.convert("L")
                 
-                # Scale up small images to improve font legibility
+                # Scale up small/medium images to improve character legibility and punctuation detection
                 w, h = gray.size
-                if w < 600 or h < 300:
-                    scale = max(600 / w, 300 / h)
+                if w < 1000 or h < 500:
+                    scale = max(1000 / w, 500 / h)
                     gray = gray.resize((int(w * scale), int(h * scale)), Image.Resampling.LANCZOS)
 
                 # Enhance contrast
                 enhancer = ImageEnhance.Contrast(gray)
                 enhanced = enhancer.enhance(1.8)
 
+                # Sharpen text edge boundaries
+                sharpener = ImageEnhance.Sharpness(enhanced)
+                sharpened = sharpener.enhance(1.6)
+
                 out_buf = io.BytesIO()
-                enhanced.save(out_buf, format="PNG")
+                sharpened.save(out_buf, format="PNG")
                 return out_buf.getvalue()
         except Exception as e:
             logger.warning(f"Image preprocessing failed, falling back to raw bytes: {e}")
@@ -118,7 +122,7 @@ class ImageTextExtractor:
 
     def extract_text_from_bytes(self, image_bytes: bytes) -> tuple[str, dict]:
         """
-        Validates, preprocesses, and extracts text.
+        Validates, preprocesses, and extracts text with per-token confidence metrics.
         Returns: (cleaned_text, metadata_dict)
         """
         fmt, w, h = self.validate_image(image_bytes)
@@ -127,17 +131,28 @@ class ImageTextExtractor:
         reader = self._get_reader()
 
         try:
-            raw_lines = reader.readtext(preprocessed_bytes, detail=0)
+            # detail=1 returns list of tuples: (bbox, text, confidence)
+            raw_results = reader.readtext(preprocessed_bytes, detail=1)
+            raw_lines = [r[1] for r in raw_results if r[1].strip()]
+            confidences = [float(r[2]) for r in raw_results if r[1].strip()]
+
             raw_joined = "\n".join(raw_lines).strip()
             
             # Post-process common OCR punctuation distortions in URLs and codes
             cleaned = self._repair_ocr_artifacts(raw_joined)
+
+            mean_conf = float(sum(confidences) / len(confidences)) if confidences else 1.0
+            min_conf = float(min(confidences)) if confidences else 1.0
+            has_uncertain = any(c < 0.65 for c in confidences)
             
             meta = {
                 "format": fmt,
                 "dimensions": f"{w}x{h}",
                 "line_count": len(raw_lines),
-                "raw_ocr_length": len(raw_joined)
+                "raw_ocr_length": len(raw_joined),
+                "mean_ocr_confidence": round(mean_conf, 3),
+                "min_ocr_confidence": round(min_conf, 3),
+                "has_uncertain_tokens": has_uncertain,
             }
             return cleaned, meta
 

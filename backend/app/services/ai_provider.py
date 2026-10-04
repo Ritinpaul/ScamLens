@@ -23,21 +23,47 @@ You MUST output valid, raw JSON conforming EXACTLY to this structure with no mar
       "evidence": "<specific quote or reasoning from the message>"
     }
   ],
-  "requests": ["<action requested of recipient e.g. click link, install APK, send money>"],
+  "requests": ["<specific dangerous or suspicious action requested of recipient e.g. click link, install APK, send money, disclose OTP>"],
   "entities": ["<organizations, banks, or brands claimed>"],
   "urls": ["<urls or domains detected>"],
   "recommended_action": "<clear actionable instruction for non-technical user>",
   "uncertainty_reason": "<honest statement of what is ambiguous or unverified>",
-  "confidence_label": "model_unvalidated"
+  "confidence_label": "model_unvalidated",
+  "requests_secret_disclosure": false,
+  "requests_payment": false,
+  "requests_external_action": false,
+  "contains_negative_security_warning": false,
+  "contains_transaction_notification": false,
+  "contains_normal_due_date_language": false,
+  "impersonates_authority": false,
+  "uses_coercive_urgency": false
 }
 
-Guidelines:
-- "scam": Clear evidence of fraud, credential harvesting, threats, or impersonation.
-- "suspicious": Contains red flags or unverified urgent claims, but lacks conclusive proof.
-- "likely_legitimate": Standard conversational text or genuine routine notification with no manipulative elements.
-- "insufficient_evidence": Too short, garbled, or ambiguous to determine.
-- NEVER fabricate tactics not supported by the message text.
-- Be honest in "uncertainty_reason".
+CRITICAL RULES FOR CONTEXTUAL CALIBRATION:
+1. Negative Security Warnings vs Credential Theft:
+   - "DO NOT share this OTP with anyone", "Never disclose your password", or "forward to 9223008333 if not done by you" are PROTECTIVE SECURITY NOTICES.
+   - When a message warns the user NOT to share their code, set "contains_negative_security_warning": true, "requests_secret_disclosure": false, and do NOT list "do not share" under requests.
+   - If a message simply delivers an OTP for login with a "do not share" warning and no suspicious link, its verdict is "likely_legitimate".
+   - Only set "requests_secret_disclosure": true and verdict "scam" if the sender ASKS or DEMANDS the recipient to share, send, or disclose an OTP, password, PIN, or CVV.
+
+2. Transactional & Due Date Notifications vs Coercive Urgency:
+   - Standard transactional debit/credit notifications (e.g. "Your account XX1234 debited INR 500. Avail balance... If not done by you...") are normal bank communications. Set "contains_transaction_notification": true, "uses_coercive_urgency": false, and verdict "likely_legitimate".
+   - Routine billing reminders (e.g. "Bill is Rs 1,240. Due date is Oct 15. Avoid late fee by paying on time via official app") use normal commercial timelines. Set "contains_normal_due_date_language": true, "uses_coercive_urgency": false, and verdict "likely_legitimate".
+   - Standard promotional notices (e.g. "Sale ends Sunday 8 PM. Show at billing counter") are benign commerce. Verdict: "likely_legitimate".
+   - Only set "uses_coercive_urgency": true if there is an extreme, imminent threat intended to panic the victim into immediate compliance (e.g. "disconnected TONIGHT at 9:30 PM", "arrest warrant issued", "terminated in 24 hours").
+
+3. Official App / Portal Guidance vs Malicious Links:
+   - Advising users to use official trusted channels ("track in Amazon app", "visit Google Account Security Dashboard", "pay via official board app") without suspicious external links is standard legitimate practice.
+   - Genuine security alerts informing of a login or password change that recommend checking the official dashboard are "likely_legitimate".
+
+4. Verdict Definitions:
+   - "scam": Clear evidence of deception, credential harvesting, extortion, advance-fee fraud, reverse QR code scam, or impersonation pushing a dangerous action.
+   - "suspicious": Unverified claims, unknown shortened links, or unsolicited outreach that warrants caution but lacks definitive proof.
+   - "likely_legitimate": Routine transactional alerts, negative security warnings, normal due-date reminders, standard job confirmations, or friendly non-coercive chats.
+   - "insufficient_evidence": Too short, garbled, or completely ambiguous text.
+
+5. Accuracy & Honesty:
+   - NEVER fabricate tactics. If a message is a normal billing reminder, DO NOT label "avoid late fee" as artificial_urgency.
 """
 
 class ModelProvider(abc.ABC):
@@ -132,6 +158,40 @@ class OllamaProvider(ModelProvider):
 
         try:
             parsed = json.loads(cleaned_json)
+            # Defensively normalize list-of-string fields (e.g. requests, entities, urls)
+            # if model returns [{'action': '...'}, ...] instead of ['...']
+            if isinstance(parsed, dict):
+                for key in ("requests", "entities", "urls"):
+                    if key in parsed and isinstance(parsed[key], list):
+                        norm_list = []
+                        for item in parsed[key]:
+                            if isinstance(item, str):
+                                norm_list.append(item)
+                            elif isinstance(item, dict):
+                                val = next((str(v) for v in item.values() if isinstance(v, (str, int))), str(item))
+                                norm_list.append(val)
+                            else:
+                                norm_list.append(str(item))
+                        parsed[key] = norm_list
+
+                # Defensively normalize boolean fields if model returned strings like "true"/"false"
+                for bool_key in (
+                    "requests_secret_disclosure",
+                    "requests_payment",
+                    "requests_external_action",
+                    "contains_negative_security_warning",
+                    "contains_transaction_notification",
+                    "contains_normal_due_date_language",
+                    "impersonates_authority",
+                    "uses_coercive_urgency",
+                ):
+                    if bool_key in parsed:
+                        val = parsed[bool_key]
+                        if isinstance(val, str):
+                            parsed[bool_key] = val.strip().lower() in ("true", "yes", "1")
+                        elif isinstance(val, (int, float)):
+                            parsed[bool_key] = bool(val)
+
         except json.JSONDecodeError as e:
             raise SchemaValidationError(
                 f"Model response was not valid JSON: {str(e)}",

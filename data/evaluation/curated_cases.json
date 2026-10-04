@@ -1,0 +1,146 @@
+[
+  {
+    "id": "scam_bank_kyc_01",
+    "category": "bank_kyc_phishing",
+    "expected_class": "scam",
+    "text": "Dear Customer, Your SBI NetBanking access will be terminated in 24 hours due to non-updated KYC. To avoid permanent account suspension, verify your PAN & NetBanking password immediately at http://sbi-kyc-verify.example.com/login",
+    "expected_semantic_tactics": ["authority_impersonation", "artificial_urgency", "fear_threat"],
+    "expected_deterministic_signals": ["credential_solicitation", "artificial_urgency", "impersonation_mismatch", "suspicious_url"],
+    "notes": "Classic bank KYC phishing combining urgent suspension threats, credential requests, and an impersonated banking domain."
+  },
+  {
+    "id": "scam_electricity_02",
+    "category": "electricity_disconnection_scam",
+    "expected_class": "scam",
+    "text": "Electricity Office Alert: Dear Consumer, your electricity power connection will be disconnected tonight at 9:30 PM because your previous month bill was not updated. Immediately contact our electricity verification officer Mr. Sharma at 9876543210 or click http://bill-update.example.com",
+    "expected_semantic_tactics": ["authority_impersonation", "artificial_urgency", "fear_threat"],
+    "expected_deterministic_signals": ["artificial_urgency", "suspicious_url"],
+    "notes": "Electricity bill disconnection panic scam pushing the victim into an immediate call or unofficial link."
+  },
+  {
+    "id": "scam_delivery_customs_03",
+    "category": "delivery_customs_payment_scam",
+    "expected_class": "scam",
+    "text": "FedEx Express: Your parcel #FX-99281 has arrived at central customs hub but is held due to unpaid import duty of Rs 149. Delivery will be cancelled and package returned to sender unless customs duty is cleared within 12 hours: http://fedex-customs-pay.example.com",
+    "expected_semantic_tactics": ["authority_impersonation", "artificial_urgency", "advance_fee_coercion"],
+    "expected_deterministic_signals": ["payment_pressure", "artificial_urgency", "impersonation_mismatch", "suspicious_url"],
+    "notes": "Low-friction customs/courier fee scam exploiting courier impersonation and imminent parcel cancellation."
+  },
+  {
+    "id": "scam_fake_job_04",
+    "category": "fake_job_recruitment_scam",
+    "expected_class": "scam",
+    "text": "Congratulations! Amazon Global Careers selected your resume for Remote Product Reviewer. Salary Rs 45000 per week, 2 hours daily work on mobile. To receive your offer letter and official employee kit, pay mandatory refundable registration fee Rs 1200 via UPI to hr-amazon@upi",
+    "expected_semantic_tactics": ["advance_fee_coercion", "unsolicited_gain_promise", "authority_impersonation"],
+    "expected_deterministic_signals": ["payment_pressure", "impersonation_mismatch"],
+    "notes": "Part-time job offer asking for an upfront 'refundable registration fee' via direct UPI handle."
+  },
+  {
+    "id": "scam_upi_payment_05",
+    "category": "upi_payment_scam",
+    "expected_class": "scam",
+    "text": "Hello buyer! Regarding your second-hand sofa listing on OLX, I am transferring the advance amount of Rs 8500 directly. Please scan this attached QR code to receive the payment into your GooglePay or PhonePe bank balance right now.",
+    "expected_semantic_tactics": ["reverse_payment_deception", "social_engineering_pretext"],
+    "expected_deterministic_signals": ["payment_pressure"],
+    "notes": "Reverse QR code deception scam: claiming scanning a QR code receives money rather than sending money."
+  },
+  {
+    "id": "scam_otp_takeover_06",
+    "category": "otp_account_takeover_scam",
+    "expected_class": "scam",
+    "text": "WhatsApp Support Team: Unusual multi-device login detected from Russia on your account. We have sent a 6 digit security code to your phone. To block the unauthorized login and protect your account, share the OTP received on SMS with this chat immediately.",
+    "expected_semantic_tactics": ["authority_impersonation", "artificial_urgency", "fear_threat"],
+    "expected_deterministic_signals": ["otp_harvesting", "artificial_urgency"],
+    "notes": "Account takeover scam pretending to be security support asking user to disclose incoming 2FA code."
+  },
+  {
+    "id": "scam_digital_arrest_07",
+    "category": "digital_arrest_police_impersonation",
+    "expected_class": "scam",
+    "text": "CENTRAL POLICE CRIME BRANCH & CYBER CELL: A parcel dispatched under your Aadhaar number containing illegal narcotics and fake passports was seized at Mumbai airport. An arrest warrant has been issued in your name under Section 120B/420. Stay on this WhatsApp video call under digital arrest until verification is completed by Senior Inspector Patil.",
+    "expected_semantic_tactics": ["authority_impersonation", "fear_threat", "coercion_intimidation"],
+    "expected_deterministic_signals": ["artificial_urgency"],
+    "notes": "High-impact digital arrest extortion scam relying on police/customs intimidation with legal terminology."
+  },
+  {
+    "id": "scam_pure_social_eng_08",
+    "category": "pure_social_engineering_no_technical_indicators",
+    "expected_class": "scam",
+    "text": "Hi Mom, my phone fell into the water and the screen is completely broken. I am texting you from my friend Priya's phone. Please save this temporary number for now. Can you also send me the contact details and family password for Grandpa's insurance binder? I need them right away.",
+    "expected_semantic_tactics": ["identity_impersonation", "artificial_urgency", "emotional_pretext"],
+    "expected_deterministic_signals": [],
+    "notes": "Crucial test case: Family emergency pretext with NO URL, NO banking keywords, and NO payment amounts. AI semantic analysis must detect identity impersonation and urgent pretext."
+  },
+  {
+    "id": "legit_bank_txn_09",
+    "category": "normal_bank_transaction",
+    "expected_class": "legitimate",
+    "text": "Your SBI account XX4091 has been debited by INR 650.00 on 04-Oct-26 at 14:22 via UPI ref 427819028491. Avail balance INR 18,420.50. If not done by you, forward this SMS to 9223008333 to block your card.",
+    "expected_semantic_tactics": [],
+    "expected_deterministic_signals": [],
+    "notes": "Standard transactional debit notification from official banking channel with no suspicious links."
+  },
+  {
+    "id": "legit_delivery_update_10",
+    "category": "legitimate_delivery_update",
+    "expected_class": "legitimate",
+    "text": "Out for delivery! Your Amazon order #402-9918231-10291 containing 'Wireless Mouse' will be delivered today by 8 PM by delivery associate Suresh. Track live package status in the Amazon app.",
+    "expected_semantic_tactics": [],
+    "expected_deterministic_signals": [],
+    "notes": "Standard eCommerce tracking notification referring the user safely to the official app rather than a link."
+  },
+  {
+    "id": "legit_electricity_reminder_11",
+    "category": "legitimate_electricity_reminder",
+    "expected_class": "legitimate",
+    "text": "Dear Consumer, Bill for CA 10098231 for billing cycle Sept 2026 is Rs 1,420. Due date is 15-Oct-2026. Avoid late fee by paying on time via official consumer portal or your electricity board mobile app.",
+    "expected_semantic_tactics": [],
+    "expected_deterministic_signals": [],
+    "notes": "Routine billing reminder without false urgency or threat of immediate disconnection tonight."
+  },
+  {
+    "id": "legit_job_ack_12",
+    "category": "normal_job_application_confirmation",
+    "expected_class": "legitimate",
+    "text": "Thank you for applying for Senior Frontend Engineer at TechCorp. We have received your application and resume. Our recruiting team will review your qualifications and contact you within 5 to 7 business days if your profile matches the role.",
+    "expected_semantic_tactics": [],
+    "expected_deterministic_signals": [],
+    "notes": "Standard ATS recruitment acknowledgement with no requests for money, deposits, or personal documents."
+  },
+  {
+    "id": "legit_bill_split_13",
+    "category": "friend_split_bill",
+    "expected_class": "legitimate",
+    "text": "Hey Rahul, great catching up at dinner yesterday! The total bill came to Rs 1800, so your share is Rs 900. Whenever you have a chance, just send it over whenever convenient. No rush!",
+    "expected_semantic_tactics": [],
+    "expected_deterministic_signals": [],
+    "notes": "Casual peer-to-peer dinner bill split. Mentions money but has zero coercion, zero urgency, and friendly context."
+  },
+  {
+    "id": "legit_otp_notification_14",
+    "category": "legitimate_otp_notification",
+    "expected_class": "legitimate",
+    "text": "942103 is your secret OTP for logging into your HDFC NetBanking account. Valid for 5 minutes. DO NOT share this OTP with anyone, including bank employees or customer care officials.",
+    "expected_semantic_tactics": [],
+    "expected_deterministic_signals": [],
+    "notes": "Legitimate authentication notification explicitly advising NEVER to disclose the OTP."
+  },
+  {
+    "id": "legit_account_notice_15",
+    "category": "normal_account_notification",
+    "expected_class": "legitimate",
+    "text": "Security Notice: Your Google Account password was changed from Chrome on Windows at 18:30 IST. If you did not make this change, please visit your Google Account Security Dashboard to review recent activity.",
+    "expected_semantic_tactics": [],
+    "expected_deterministic_signals": [],
+    "notes": "Legitimate security alert notifying user of an action taken without pushing external credential collection links."
+  },
+  {
+    "id": "legit_promotional_16",
+    "category": "benign_promotional_message",
+    "expected_class": "legitimate",
+    "text": "Festive Super Sale! Get flat 40% discount on all books and stationery this weekend at your nearest City Bookstore. Offer valid till Sunday 8 PM. Show this message at billing counter to claim store discount.",
+    "expected_semantic_tactics": [],
+    "expected_deterministic_signals": [],
+    "notes": "Benign local retail promotional SMS with no links, no sensitive data requests, and in-person store redemption."
+  }
+]
