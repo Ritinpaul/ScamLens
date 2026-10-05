@@ -1,4 +1,5 @@
 import React from 'react';
+import SecurityOutlined from '@mui/icons-material/SecurityOutlined';
 import { HealthStatus } from '../types/scamlens';
 
 interface HeaderProps {
@@ -14,7 +15,8 @@ export const Header: React.FC<HeaderProps> = ({ health, loadingHealth }) => {
     <header className="app-header">
       <div className="brand-section">
         <h1 className="brand-title">
-          <span className="brand-icon">🛡️</span> ScamLens
+          <SecurityOutlined className="brand-icon" style={{ fontSize: '1.75rem' }} />
+          ScamLens
         </h1>
         <p className="brand-subtitle">Private scam analysis. Runs locally.</p>
       </div>

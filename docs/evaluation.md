@@ -219,3 +219,59 @@ While the calibrated evaluation achieved 100% accuracy on our 16-case curated be
 1. **Curated Benchmark Scope:** 16 cases demonstrate semantic discernment between typical attack structures and standard notification patterns, but real-world communications exhibit immense linguistic diversity.
 2. **Adversarial Double-Bluffing:** Sophisticated attackers who mimic negative security warnings while simultaneously embedding deceptive call-back phone numbers require caller-ID reputation telemetry that a local offline tool cannot verify.
 3. **Hardware Dependence:** Local Llama 3 8B inference latency averages ~36 seconds per message on consumer laptop hardware.
+
+---
+
+## 9. Live Human-Test Regression & Contextual Resolution (Stage 5.1)
+
+### The Discovery: Live Human Test False-Positive
+Following our Stage 4.5 calibration which reported 0/8 false positives on curated data, we initiated real-world user testing with a non-technical family member.
+
+When the user entered the legitimate banking OTP notification from `data/friend_test/test_03_legitimate_otp.txt`:
+> *"Your login OTP is 482913. Valid for 5 minutes. DO NOT share this OTP with anyone, including bank employees or support agents. If you did not request this login, review your account security settings."*
+
+The live web UI produced an incorrect verdict:
+- **Verdict:** `SCAM DETECTED` (Confidence: `MEDIUM`)
+- **Summary:** *"Phishing attempt to trick the user into sharing their login OTP or compromising their account security."*
+- **Tactics Detected:**
+  - `urgency`: *"Valid for 5 minutes"*
+  - `social engineering`: *"DO NOT share this OTP with anyone, including bank employees or support agents"*
+- **Actions Demanded:** *"Do not share the OTP"*
+- **Deterministic Checks:** Risk: `NONE` (0 signals)
+
+The non-technical user immediately questioned the result: *"The message says 'DO NOT share', why is ScamLens telling me that 'Do not share' is an action demanded by a scammer?"*
+
+### Root Cause Analysis
+A deep-dive through the normalizer, AI provider, deterministic verifier, and decision engine revealed two intersecting root causes:
+1. **Runtime Server Process Staleness:** The running FastAPI server had been started prior to Stage 4.5 prompt calibration without `--reload`. It was executing the ancient pre-calibration schema in memory where calibration fields like `contains_negative_security_warning` did not exist.
+2. **Semantic Representation Ambiguity:**
+   - The 8B LLM conflated **natural token expiry** (`"Valid for 5 minutes"`) with **coercive urgency**. OTP codes expire naturally; this is not coercive psychological pressure unless accompanied by threats of account suspension, arrest, or financial loss.
+   - The model treated mentions of `"bank employees or support agents"` as authority impersonation and `"DO NOT share"` as social engineering, incorrectly extracting the protective warning into the `requests` array as an action demanded.
+3. **Decision Engine Logic Gap:** In `DecisionEngine.synthesize`, the `is_protective_notice` gate required `not uses_coercive_urgency`. Because the model flagged "Valid for 5 minutes" as urgency, `is_protective_notice` evaluated to `False`, allowing the AI verdict to fall through to `SCAM`.
+
+### Architectural Resolution
+Rather than patching with brittle regex string exceptions, we addressed the root semantic representation:
+
+1. **Semantic Schema Expansion (`AiAnalysisOutput`):**
+   - Added `mentions_otp: bool` (whether an authentication code is present).
+   - Added `otp_expiry: bool` (whether natural code lifetime e.g. "valid for 5 minutes" is stated).
+   - Added `protective_security_advice: bool` (whether the message instructs recipient to safeguard credentials).
+   - Added `dangerous_external_action: bool` (whether recipient is directed to take dangerous actions).
+
+2. **Prompt & Defensive Normalization (`ai_provider.py`):**
+   - Clarified in `SCAM_ANALYSIS_SYSTEM_PROMPT` that natural OTP expiry is standard token lifetime, NOT coercive urgency.
+   - Forbade placing protective advice ("do not share") in the `requests` array.
+   - Added defensive post-processing:
+     - Automatically strips negative sharing warnings out of `requests`.
+     - Ensures `uses_coercive_urgency` is set to `False` when the only time mention is standard token expiry.
+     - Strips mislabeled "social engineering" tactics that merely quote negative security advice.
+
+3. **Decision Engine Calibration (`decision_engine.py`):**
+   - Updated `is_protective_notice` to accept `otp_expiry` as non-coercive.
+   - Calibrated plain-English summaries so that legitimate OTP messages never display misleading "Phishing attempt" summaries when calibrated to `LIKELY_LEGITIMATE`.
+   - **Preserved Pure Social Engineering Detection:** Maintained full scam detection on credential requests without technical signals (e.g. family emergency pretext asking for passwords).
+
+4. **Regression Verification:**
+   - Added `test_exact_live_human_otp_regression` in `backend/tests/test_context_calibration.py`.
+   - Added 6 realistic OTP controls (3 legitimate variations, 3 scam variations). All 51 backend tests pass.
+   - Verified live in the browser UI at `http://localhost:5173/`: verdict is `LIKELY LEGITIMATE` with transparent explanation.

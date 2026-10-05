@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import ErrorOutlineOutlined from '@mui/icons-material/ErrorOutlineOutlined';
+import RestartAltOutlined from '@mui/icons-material/RestartAltOutlined';
+import LockOutlined from '@mui/icons-material/LockOutlined';
 import { Header } from './components/Header';
 import { InputArea } from './components/InputArea';
 import { VerdictCard } from './components/VerdictCard';
@@ -84,7 +87,10 @@ export function App() {
 
       {error && (
         <div className="error-banner" role="alert">
-          <div className="error-title">⚠️ Analysis Error</div>
+          <div className="error-title">
+            <ErrorOutlineOutlined sx={{ fontSize: '1.1rem' }} />
+            <span>Analysis Error</span>
+          </div>
           <div>{error}</div>
         </div>
       )}
@@ -116,7 +122,8 @@ export function App() {
 
           <div className="reset-row">
             <button className="reset-btn" onClick={handleReset}>
-              🔄 Analyze Another Message
+              <RestartAltOutlined sx={{ fontSize: '1.1rem' }} />
+              <span>Analyze Another Message</span>
             </button>
           </div>
         </main>
@@ -124,7 +131,8 @@ export function App() {
 
       <footer className="app-footer">
         <p>
-          🔒 <strong>Privacy Assurance:</strong> Your message is analyzed locally on this device using open-source models. ScamLens never sends your data to third-party cloud APIs.
+          <LockOutlined sx={{ fontSize: '0.95rem', color: '#10b981', verticalAlign: 'text-bottom', marginRight: '0.4rem' }} />
+          <strong>Privacy Assurance:</strong> Local processing on this device. Messages and screenshots remain strictly confidential and never leave your environment.
         </p>
       </footer>
     </div>

@@ -73,11 +73,12 @@ class DecisionEngine:
 
         # Contextual flags from AI model
         is_protective_notice = (
-            ai_output.contains_negative_security_warning
+            (ai_output.contains_negative_security_warning or ai_output.protective_security_advice)
             and not ai_output.requests_secret_disclosure
             and not ai_output.requests_payment
             and not ai_output.requests_external_action
-            and not ai_output.uses_coercive_urgency
+            and not ai_output.dangerous_external_action
+            and (not ai_output.uses_coercive_urgency or ai_output.otp_expiry)
         ) if ai_output else False
 
         is_routine_informational = (
@@ -85,6 +86,7 @@ class DecisionEngine:
             and not ai_output.requests_secret_disclosure
             and not ai_output.requests_payment
             and not ai_output.requests_external_action
+            and not ai_output.dangerous_external_action
             and not ai_output.uses_coercive_urgency
         ) if ai_output else False
 
@@ -102,7 +104,7 @@ class DecisionEngine:
                 # The model called it scam despite acknowledging protective security instructions with no dangerous requests
                 verdict = FinalVerdict.LIKELY_LEGITIMATE
                 confidence = ConfidenceRating.MEDIUM
-                conf_exp = "The message contains protective security advice ('do not share') with no demands for secret disclosure or external action."
+                conf_exp = "The message contains a normal OTP/security notification and explicitly tells you not to share the code. No suspicious technical indicators or dangerous action requests were detected."
                 rationale.append("CONTEXT CALIBRATION: Explicit negative security warning ('do not share') detected with no attack payload; confirmed benign notification.")
             else:
                 verdict = FinalVerdict.SCAM
@@ -126,7 +128,7 @@ class DecisionEngine:
                 # Model expressed hyper-vigilance on a routine notification with benign words
                 verdict = FinalVerdict.LIKELY_LEGITIMATE
                 confidence = ConfidenceRating.MEDIUM
-                conf_exp = "Semantic context confirms standard transactional or due-date notification without manipulative coercion or external attack links."
+                conf_exp = "The message contains a normal OTP or routine informational notification with no manipulative coercion or dangerous action requests."
                 rationale.append("CONTEXT CALIBRATION: Routine informational notification or standard commercial due-date notice without coercive threats or unverified external links. Evaluated as legitimate.")
             else:
                 verdict = FinalVerdict.SUSPICIOUS
@@ -190,6 +192,14 @@ class DecisionEngine:
         ai_output: AiAnalysisOutput | None,
         verifier: VerifierOutput
     ) -> str:
+        if verdict == FinalVerdict.LIKELY_LEGITIMATE:
+            if ai_output and (ai_output.contains_negative_security_warning or ai_output.protective_security_advice):
+                return "The message contains a normal OTP/security notification and explicitly tells you not to share the code. No suspicious technical indicators or dangerous action requests were detected."
+            if ai_output and ai_output.contains_transaction_notification:
+                return "Standard financial or account transaction notification. No malicious links or unauthorized credential requests were detected."
+            if ai_output and ai_output.contains_normal_due_date_language:
+                return "Standard billing or service due date reminder. No coercive threats or unauthorized payment channels were detected."
+
         if ai_output and ai_output.summary:
             return ai_output.summary
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import GavelOutlined from '@mui/icons-material/GavelOutlined';
 
 interface WhyResultCardProps {
   rationale: string[];
@@ -11,9 +12,10 @@ export const WhyResultCard: React.FC<WhyResultCardProps> = ({ rationale }) => {
     <div className="panel">
       <div className="section-header">
         <div className="section-title">
-          ⚖️ WHY THIS RESULT?
+          <GavelOutlined sx={{ fontSize: '1.1rem', color: '#94a3b8' }} />
+          <span>WHY THIS RESULT?</span>
           <span className="source-tag" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
-            Source: Decision Engine
+            Decision Engine
           </span>
         </div>
       </div>

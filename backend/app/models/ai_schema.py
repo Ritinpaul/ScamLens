@@ -59,3 +59,19 @@ class AiAnalysisOutput(BaseModel):
         default=False,
         description="Threatening imminent account freeze, power shutoff, or arrest to prevent reflection"
     )
+    mentions_otp: bool = Field(
+        default=False,
+        description="Whether an authentication code, OTP, or one-time password is mentioned"
+    )
+    otp_expiry: bool = Field(
+        default=False,
+        description="Whether natural OTP token validity/expiration time is specified (e.g. valid for 5 minutes)"
+    )
+    protective_security_advice: bool = Field(
+        default=False,
+        description="Whether the message provides genuine security advice advising against sharing codes or recommending account review"
+    )
+    dangerous_external_action: bool = Field(
+        default=False,
+        description="Whether the sender asks the recipient to perform a dangerous action like disclosing secrets, paying, or clicking unknown links"
+    )

@@ -1,4 +1,5 @@
 import React from 'react';
+import PsychologyOutlined from '@mui/icons-material/PsychologyOutlined';
 import { AiAnalysisOutput } from '../types/scamlens';
 
 interface AiUnderstandingCardProps {
@@ -11,12 +12,13 @@ export const AiUnderstandingCard: React.FC<AiUnderstandingCardProps> = ({ ai }) 
       <div className="panel">
         <div className="section-header">
           <div className="section-title">
-            🧠 AI UNDERSTANDING
-            <span className="source-tag ai">Source: Model</span>
+            <PsychologyOutlined sx={{ fontSize: '1.1rem', color: '#818cf8' }} />
+            <span>AI UNDERSTANDING</span>
+            <span className="source-tag ai">Local Model</span>
           </div>
         </div>
         <p className="section-subtitle">
-          AI semantic model analysis was offline or unavailable during this assessment.
+          Local semantic model analysis was offline or unavailable during this assessment.
         </p>
       </div>
     );
@@ -26,8 +28,9 @@ export const AiUnderstandingCard: React.FC<AiUnderstandingCardProps> = ({ ai }) 
     <div className="panel">
       <div className="section-header">
         <div className="section-title">
-          🧠 AI UNDERSTANDING
-          <span className="source-tag ai">Source: Model ({ai.model_name})</span>
+          <PsychologyOutlined sx={{ fontSize: '1.1rem', color: '#818cf8' }} />
+          <span>AI UNDERSTANDING</span>
+          <span className="source-tag ai">Local Model ({ai.model_name})</span>
         </div>
         <span className="section-subtitle">
           {ai.confidence_label

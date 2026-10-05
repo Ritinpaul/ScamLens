@@ -1,4 +1,6 @@
 import React from 'react';
+import DataObjectOutlined from '@mui/icons-material/DataObjectOutlined';
+import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import { EvidenceTrace } from '../types/scamlens';
 
 interface EvidenceTraceCardProps {
@@ -12,19 +14,28 @@ export const EvidenceTraceCard: React.FC<EvidenceTraceCardProps> = ({ trace }) =
     <div className="panel">
       <div className="section-header">
         <div className="section-title">
-          📋 EVIDENCE TRACE
+          <DataObjectOutlined sx={{ fontSize: '1.1rem', color: '#94a3b8' }} />
+          <span>EVIDENCE TRACE</span>
         </div>
         <span className="source-tag" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
-          {isOcr ? 'Source: Screenshot OCR' : 'Source: Pasted Text'}
+          {isOcr ? 'Screenshot OCR' : 'Pasted Text'}
         </span>
       </div>
 
       {isOcr && trace.image_metadata && (
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '0.75rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          <span><strong>Format:</strong> {trace.image_metadata.format || 'Unknown'}</span>
-          <span><strong>Dimensions:</strong> {trace.image_metadata.dimensions || 'Unknown'}</span>
-          <span><strong>Extracted Lines:</strong> {trace.image_metadata.line_count ?? 'N/A'}</span>
-          <span><strong>Normalized Length:</strong> {trace.normalized_input_length} chars</span>
+        <div className="evidence-metadata-row">
+          <span className="evidence-badge">
+            <span className="badge-key">Format:</span> {trace.image_metadata.format || 'Unknown'}
+          </span>
+          <span className="evidence-badge">
+            <span className="badge-key">Dimensions:</span> {trace.image_metadata.dimensions || 'Unknown'}
+          </span>
+          <span className="evidence-badge">
+            <span className="badge-key">Extracted Lines:</span> {trace.image_metadata.line_count ?? 'N/A'}
+          </span>
+          <span className="evidence-badge">
+            <span className="badge-key">Length:</span> {trace.normalized_input_length} chars
+          </span>
         </div>
       )}
 
@@ -37,9 +48,12 @@ export const EvidenceTraceCard: React.FC<EvidenceTraceCardProps> = ({ trace }) =
       </pre>
 
       {isOcr && (
-        <p className="trace-notice">
-          ⚠️ Some text or punctuation in the URL above may have been misread from the screenshot due to image resolution or fonts.
-        </p>
+        <div className="trace-notice">
+          <InfoOutlined sx={{ fontSize: '1rem', flexShrink: 0, color: 'var(--text-muted)' }} />
+          <span>
+            OCR extraction fidelity depends on screenshot resolution and contrast. Low-resolution glyphs or unusual fonts may introduce minor character variance.
+          </span>
+        </div>
       )}
     </div>
   );

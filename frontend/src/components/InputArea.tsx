@@ -1,4 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ImageOutlined from '@mui/icons-material/ImageOutlined';
+import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined';
+import CloudUploadOutlined from '@mui/icons-material/CloudUploadOutlined';
+import SearchOutlined from '@mui/icons-material/SearchOutlined';
 
 interface InputAreaProps {
   onAnalyzeText: (text: string) => void;
@@ -95,7 +99,8 @@ export const InputArea: React.FC<InputAreaProps> = ({
           role="tab"
           aria-selected={activeTab === 'screenshot'}
         >
-          📷 Screenshot
+          <ImageOutlined style={{ fontSize: '1rem', verticalAlign: 'middle', marginRight: '0.35rem' }} />
+          Screenshot
         </button>
         <button
           className={`tab-btn ${activeTab === 'text' ? 'active' : ''}`}
@@ -103,7 +108,8 @@ export const InputArea: React.FC<InputAreaProps> = ({
           role="tab"
           aria-selected={activeTab === 'text'}
         >
-          📝 Paste Text
+          <DescriptionOutlined style={{ fontSize: '1rem', verticalAlign: 'middle', marginRight: '0.35rem' }} />
+          Paste Text
         </button>
       </div>
 
@@ -151,9 +157,11 @@ export const InputArea: React.FC<InputAreaProps> = ({
                 if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click();
               }}
             >
-              <div className="dropzone-icon">🖼️</div>
-              <div className="dropzone-label">Drag and drop a screenshot here, or click to browse</div>
-              <div className="dropzone-hint">Supports PNG, JPEG, WebP (Max 10MB)</div>
+              <div className="dropzone-icon">
+                <CloudUploadOutlined style={{ fontSize: '2.5rem', color: 'var(--text-muted)' }} />
+              </div>
+              <div className="dropzone-label">Drop a suspicious message screenshot here, or click to browse</div>
+              <div className="dropzone-hint">Supports PNG, JPEG, WebP up to 10MB • Processed locally via EasyOCR</div>
             </div>
           )}
 
@@ -200,6 +208,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
           onClick={handleAnalyze}
           disabled={isSubmitDisabled}
         >
+          <SearchOutlined style={{ fontSize: '1.1rem', verticalAlign: 'middle', marginRight: '0.4rem' }} />
           {isAnalyzing ? 'Analyzing...' : 'Analyze Message'}
         </button>
       </div>

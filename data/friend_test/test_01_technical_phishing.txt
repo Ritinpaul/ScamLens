@@ -1,0 +1,1 @@
+Dear Customer, your SBI NetBanking account will be suspended today due to KYC failure. Verify your PAN and login password immediately at http://sbi-kyc-verify.example.com/login to prevent permanent blockage.

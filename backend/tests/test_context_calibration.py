@@ -215,3 +215,147 @@ def test_pair_4_payment_context():
     )
     scam_decision = engine.synthesize(scam_ai, scam_ver, scam_text, len(scam_text))
     assert scam_decision.verdict == FinalVerdict.SCAM
+
+def test_exact_live_human_otp_regression():
+    """
+    Stage 5.1 Critical Live OTP Regression Test:
+    User tested legitimate OTP:
+    'Your login OTP is 482913. Valid for 5 minutes. DO NOT share this OTP with anyone, including bank employees or support agents. If you did not request this login, review your account security settings.'
+    Must assert:
+    - requests_secret_disclosure == False
+    - contains_negative_security_warning == True
+    - uses_coercive_urgency == False
+    - final verdict == LIKELY_LEGITIMATE
+    """
+    verifier = DeterministicVerifier()
+    engine = DecisionEngine()
+
+    live_text = "Your login OTP is 482913. Valid for 5 minutes. DO NOT share this OTP with anyone, including bank employees or support agents. If you did not request this login, review your account security settings."
+    live_ver = verifier.verify(live_text)
+    assert live_ver.has_otp_request is False
+    assert live_ver.deterministic_risk_level == "none"
+
+    # Even if model outputs raw tactics or mentions OTP
+    live_ai = AiAnalysisOutput(
+        verdict=AiVerdict.LIKELY_LEGITIMATE,
+        summary="Standard login OTP with protective security guidance.",
+        tactics=[TacticItem(type="protective_security_advice", evidence="DO NOT share this OTP with anyone")],
+        requests=[],
+        entities=["bank"],
+        urls=[],
+        recommended_action="Keep code confidential and review account settings if unrequested.",
+        requests_secret_disclosure=False,
+        contains_negative_security_warning=True,
+        uses_coercive_urgency=False,
+        mentions_otp=True,
+        otp_expiry=True,
+        protective_security_advice=True,
+        dangerous_external_action=False,
+    )
+
+    assert live_ai.requests_secret_disclosure is False
+    assert live_ai.contains_negative_security_warning is True
+    assert live_ai.uses_coercive_urgency is False
+
+    decision = engine.synthesize(live_ai, live_ver, live_text, len(live_text))
+    assert decision.verdict == FinalVerdict.LIKELY_LEGITIMATE
+
+    # Even under extreme model hyper-vigilance where AI mislabels it as SCAM:
+    hyper_vigilant_ai = AiAnalysisOutput(
+        verdict=AiVerdict.SCAM,
+        summary="Phishing attempt to compromise account security.",
+        tactics=[TacticItem(type="urgency", evidence="Valid for 5 minutes")],
+        requests=[],
+        entities=["bank"],
+        urls=[],
+        recommended_action="Do not share code.",
+        requests_secret_disclosure=False,
+        contains_negative_security_warning=True,
+        uses_coercive_urgency=False,
+        mentions_otp=True,
+        otp_expiry=True,
+        protective_security_advice=True,
+        dangerous_external_action=False,
+    )
+    calibrated_decision = engine.synthesize(hyper_vigilant_ai, live_ver, live_text, len(live_text))
+    assert calibrated_decision.verdict == FinalVerdict.LIKELY_LEGITIMATE
+
+def test_realistic_otp_controls_legitimate():
+    """
+    Legit OTP 1: 'Your login OTP is 482913. It is valid for 5 minutes. Do not share this OTP with anyone.'
+    Legit OTP 2: 'Use OTP 193821 to complete your login. Never share this code with anyone, including bank staff.'
+    Legit OTP 3: 'Your one-time password expires in 5 minutes. If you did not request this login, secure your account through the official app.'
+    All must evaluate to LIKELY_LEGITIMATE.
+    """
+    verifier = DeterministicVerifier()
+    engine = DecisionEngine()
+
+    legit_cases = [
+        "Your login OTP is 482913. It is valid for 5 minutes. Do not share this OTP with anyone.",
+        "Use OTP 193821 to complete your login. Never share this code with anyone, including bank staff.",
+        "Your one-time password expires in 5 minutes. If you did not request this login, secure your account through the official app.",
+    ]
+
+    for text in legit_cases:
+        ver = verifier.verify(text)
+        assert ver.has_otp_request is False
+        assert ver.deterministic_risk_level == "none"
+
+        ai = AiAnalysisOutput(
+            verdict=AiVerdict.LIKELY_LEGITIMATE,
+            summary="Legitimate authentication code notification.",
+            tactics=[],
+            requests=[],
+            entities=[],
+            urls=[],
+            recommended_action="Do not share your code.",
+            requests_secret_disclosure=False,
+            contains_negative_security_warning=True,
+            uses_coercive_urgency=False,
+            mentions_otp=True,
+            otp_expiry=True,
+            protective_security_advice=True,
+            dangerous_external_action=False,
+        )
+        res = engine.synthesize(ai, ver, text, len(text))
+        assert res.verdict == FinalVerdict.LIKELY_LEGITIMATE
+
+def test_realistic_otp_controls_scams():
+    """
+    Scam OTP 1: 'Bank support: send us the OTP you just received to verify your identity.'
+    Scam OTP 2: 'Your account will be blocked unless you provide the OTP immediately to our support team.'
+    Scam OTP 3: 'Share the OTP you received with the verification agent to prevent account suspension.'
+    All must evaluate to SCAM.
+    """
+    verifier = DeterministicVerifier()
+    engine = DecisionEngine()
+
+    scam_cases = [
+        ("Bank support: send us the OTP you just received to verify your identity.", True),
+        ("Your account will be blocked unless you provide the OTP immediately to our support team.", True),
+        ("Share the OTP you received with the verification agent to prevent account suspension.", True),
+    ]
+
+    for text, expected_scam in scam_cases:
+        ver = verifier.verify(text)
+        # Deterministic verifier should flag direct OTP solicitation
+        assert ver.has_otp_request is True
+        assert ver.deterministic_risk_level in ("high", "critical")
+
+        ai = AiAnalysisOutput(
+            verdict=AiVerdict.SCAM,
+            summary="Attacker attempting to intercept 2FA code.",
+            tactics=[TacticItem(type="credential_harvesting", evidence="send us the OTP")],
+            requests=["provide OTP"],
+            entities=["Support"],
+            urls=[],
+            recommended_action="Do not provide OTP.",
+            requests_secret_disclosure=True,
+            contains_negative_security_warning=False,
+            uses_coercive_urgency=True,
+            mentions_otp=True,
+            dangerous_external_action=True,
+            protective_security_advice=False,
+        )
+        res = engine.synthesize(ai, ver, text, len(text))
+        assert res.verdict == FinalVerdict.SCAM

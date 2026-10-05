@@ -36,15 +36,21 @@ You MUST output valid, raw JSON conforming EXACTLY to this structure with no mar
   "contains_transaction_notification": false,
   "contains_normal_due_date_language": false,
   "impersonates_authority": false,
-  "uses_coercive_urgency": false
+  "uses_coercive_urgency": false,
+  "mentions_otp": false,
+  "otp_expiry": false,
+  "protective_security_advice": false,
+  "dangerous_external_action": false
 }
 
 CRITICAL RULES FOR CONTEXTUAL CALIBRATION:
-1. Negative Security Warnings vs Credential Theft:
-   - "DO NOT share this OTP with anyone", "Never disclose your password", or "forward to 9223008333 if not done by you" are PROTECTIVE SECURITY NOTICES.
-   - When a message warns the user NOT to share their code, set "contains_negative_security_warning": true, "requests_secret_disclosure": false, and do NOT list "do not share" under requests.
-   - If a message simply delivers an OTP for login with a "do not share" warning and no suspicious link, its verdict is "likely_legitimate".
-   - Only set "requests_secret_disclosure": true and verdict "scam" if the sender ASKS or DEMANDS the recipient to share, send, or disclose an OTP, password, PIN, or CVV.
+1. Negative Security Warnings & OTP vs Credential Theft:
+   - "DO NOT share this OTP with anyone", "Never disclose your password/PIN/CVV", "bank employees or support agents will never ask for this", or "If you did not request this login, review your account security settings" are PROTECTIVE SECURITY ADVICE.
+   - When present, set "contains_negative_security_warning": true, "protective_security_advice": true, "requests_secret_disclosure": false, and do NOT classify this as social engineering or authority impersonation.
+   - Crucially: NEVER list protective advice ("DO NOT share OTP", "never disclose code") under "requests". The "requests" array is ONLY for actions demanded of the victim by an attacker.
+   - Natural OTP token expiration (e.g. "valid for 5 minutes", "expires in 10 minutes") is standard token lifetime. It is NOT coercive urgency. Set "otp_expiry": true, "uses_coercive_urgency": false, and do NOT classify standard code lifetime as urgency or artificial_urgency.
+   - If a message delivers an authentication code or OTP with a protective warning ("do not share") and no demand to forward/reveal the code, set "mentions_otp": true, "requests_secret_disclosure": false, "dangerous_external_action": false, and verdict "likely_legitimate".
+   - If a message asks the user to provide/share/send an OTP or verification code (e.g. "send us the OTP you received", "provide OTP to prevent account block"), set "requests_secret_disclosure": true, "dangerous_external_action": true, and verdict "scam".
 
 2. Transactional & Due Date Notifications vs Coercive Urgency:
    - Standard transactional debit/credit notifications (e.g. "Your account XX1234 debited INR 500. Avail balance... If not done by you...") are normal bank communications. Set "contains_transaction_notification": true, "uses_coercive_urgency": false, and verdict "likely_legitimate".
@@ -184,6 +190,10 @@ class OllamaProvider(ModelProvider):
                     "contains_normal_due_date_language",
                     "impersonates_authority",
                     "uses_coercive_urgency",
+                    "mentions_otp",
+                    "otp_expiry",
+                    "protective_security_advice",
+                    "dangerous_external_action",
                 ):
                     if bool_key in parsed:
                         val = parsed[bool_key]
@@ -191,6 +201,64 @@ class OllamaProvider(ModelProvider):
                             parsed[bool_key] = val.strip().lower() in ("true", "yes", "1")
                         elif isinstance(val, (int, float)):
                             parsed[bool_key] = bool(val)
+
+                # 1. Sanitize 'requests' to ensure protective advice is never listed as an action demanded
+                clean_requests = []
+                for req in parsed.get("requests", []):
+                    if re.search(r"\b(?:do not|don'?t|never)\s+(?:share|disclose|give|send|tell)\b", req, re.I) or "not share" in req.lower():
+                        parsed["contains_negative_security_warning"] = True
+                        parsed["protective_security_advice"] = True
+                        parsed["requests_secret_disclosure"] = False
+                    else:
+                        clean_requests.append(req)
+                parsed["requests"] = clean_requests
+
+                # 2. Text inspection for OTP, natural expiry, and protective security advice
+                if re.search(r"\b(?:otp|one[- ]time password|verification code)\b", text, re.I):
+                    parsed["mentions_otp"] = True
+
+                if re.search(r"\b(?:valid for|expires in)\s+\d+\s*(?:min|minute|sec|second)s?\b", text, re.I):
+                    parsed["otp_expiry"] = True
+                    # Natural expiration is not coercive urgency unless accompanied by imminent penalties
+                    if not re.search(r"\b(?:block|suspend|freeze|arrest|terminate|disconnect|penalty|legal|tonight)\b", text, re.I):
+                        parsed["uses_coercive_urgency"] = False
+
+                if re.search(r"\b(?:do not|don'?t|never)\s+(?:share|disclose|give|send|tell)\b", text, re.I):
+                    parsed["contains_negative_security_warning"] = True
+                    parsed["protective_security_advice"] = True
+                    parsed["requests_secret_disclosure"] = False
+
+                # 3. Detect dangerous secret solicitation
+                if re.search(r"\b(?:send|share|provide|give|forward)\s+(?:us\s+)?(?:the\s+)?(?:otp|code|password|pin|cvv)\b", text, re.I) and not re.search(r"\b(?:do not|don'?t|never)\s+(?:send|share|provide|give|forward)\b", text, re.I):
+                    parsed["requests_secret_disclosure"] = True
+                    parsed["dangerous_external_action"] = True
+                    parsed["protective_security_advice"] = False
+
+                # 4. Clean false tactics (e.g. labeling OTP expiry as urgency, or protective advice as social engineering)
+                filtered_tactics = []
+                for t in parsed.get("tactics", []):
+                    t_type = (t.get("type") or "").lower() if isinstance(t, dict) else getattr(t, "type", "").lower()
+                    t_ev = (t.get("evidence") or "").lower() if isinstance(t, dict) else getattr(t, "evidence", "").lower()
+
+                    # Exclude natural OTP validity if mislabeled as urgency
+                    if any(term in t_type for term in ("urgency", "pressure")) and any(exp in t_ev for exp in ("valid for", "expires in", "expiry")):
+                        if not re.search(r"\b(?:block|suspend|freeze|arrest|terminate|disconnect)\b", text, re.I):
+                            continue
+
+                    # Exclude protective "do not share" if mislabeled as social engineering
+                    if any(term in t_type for term in ("social", "engineering", "impersonation")) and any(w in t_ev for w in ("do not share", "never share", "don't share")):
+                        continue
+
+                    filtered_tactics.append(t)
+                parsed["tactics"] = filtered_tactics
+
+                # 5. Resolve protective security notices
+                if parsed.get("mentions_otp") and (parsed.get("protective_security_advice") or parsed.get("contains_negative_security_warning")):
+                    if not parsed.get("requests_secret_disclosure") and not parsed.get("requests_payment") and not parsed.get("requests"):
+                        parsed["dangerous_external_action"] = False
+                        if parsed.get("verdict") in ("scam", "suspicious") and not parsed.get("urls"):
+                            parsed["verdict"] = "likely_legitimate"
+                            parsed["summary"] = "Standard login authentication notice with legitimate OTP validity and explicit protective warnings advising against code disclosure."
 
         except json.JSONDecodeError as e:
             raise SchemaValidationError(
